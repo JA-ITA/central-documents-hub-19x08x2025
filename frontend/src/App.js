@@ -1020,8 +1020,9 @@ const Dashboard = () => {
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                onClick={() => window.open(`${BACKEND_URL}${policy.file_url}`, '_blank')}
+                                onClick={() => handleViewPolicy(policy)}
                                 className="h-8 px-2"
+                                title="View document"
                               >
                                 <Eye className="h-4 w-4" />
                               </Button>
@@ -1030,11 +1031,21 @@ const Dashboard = () => {
                                 variant="ghost"
                                 onClick={() => handleDownload(policy.id)}
                                 className="h-8 px-2"
+                                title="Download document"
                               >
                                 <Download className="h-4 w-4" />
                               </Button>
                               {user.role === 'admin' && (
                                 <>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleEditDocument(policy)}
+                                    className="h-8 px-2"
+                                    title="Edit document"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
                                   <Button
                                     size="sm"
                                     variant="ghost"
