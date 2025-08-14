@@ -62,6 +62,7 @@ class PolicyType(BaseModel):
     code: str
     description: Optional[str] = ""
     is_active: bool = True
+    is_deleted: bool = False
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class PolicyTypeCreate(BaseModel):
