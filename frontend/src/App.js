@@ -255,6 +255,221 @@ const Login = () => {
   );
 };
 
+// PDF Viewer Component
+const PDFViewer = () => {
+  const { policyId } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [policy, setPolicy] = useState(null);
+  const [numPages, setNumPages] = useState(null);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [scale, setScale] = useState(1.0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchPolicy();
+  }, [policyId]);
+
+  const fetchPolicy = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API}/policies/${policyId}`);
+      setPolicy(response.data);
+      setError(null);
+    } catch (error) {
+      console.error('Error fetching policy:', error);
+      setError('Failed to load policy document');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onDocumentLoadSuccess = ({ numPages }) => {
+    setNumPages(numPages);
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleDownload = async () => {
+    try {
+      const response = await axios.get(`${API}/policies/${policyId}/download`, {
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', policy.file_name);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading policy:', error);
+    }
+  };
+
+  const changePage = (offset) => {
+    setPageNumber(prevPageNumber => prevPageNumber + offset);
+  };
+
+  const previousPage = () => {
+    changePage(-1);
+  };
+
+  const nextPage = () => {
+    changePage(1);
+  };
+
+  const zoomIn = () => {
+    setScale(prevScale => Math.min(prevScale + 0.1, 2.0));
+  };
+
+  const zoomOut = () => {
+    setScale(prevScale => Math.max(prevScale - 0.1, 0.5));
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-800 mx-auto"></div>
+          <p className="mt-2 text-slate-600">Loading document...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !policy) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6 text-center">
+            <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Error Loading Document</h3>
+            <p className="text-slate-600 mb-4">{error}</p>
+            <Button onClick={() => navigate('/')}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Dashboard
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const pdfUrl = `${BACKEND_URL}${policy.file_url}`;
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      {/* Header */}
+      <header className="bg-white border-b border-slate-200 shadow-sm print:hidden">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <Button variant="ghost" onClick={() => navigate('/')}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Dashboard
+              </Button>
+              <Separator orientation="vertical" className="h-6" />
+              <div>
+                <h1 className="text-xl font-bold text-slate-800">{policy.title}</h1>
+                <p className="text-sm text-slate-600">Policy Number: {policy.policy_number}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" size="sm" onClick={zoomOut}>
+                <ZoomOut className="h-4 w-4" />
+              </Button>
+              <span className="text-sm text-slate-600 min-w-[60px] text-center">
+                {Math.round(scale * 100)}%
+              </span>
+              <Button variant="outline" size="sm" onClick={zoomIn}>
+                <ZoomIn className="h-4 w-4" />
+              </Button>
+              <Separator orientation="vertical" className="h-6" />
+              <Button variant="outline" size="sm" onClick={handleDownload}>
+                <Download className="h-4 w-4 mr-2" />
+                Download
+              </Button>
+              <Button variant="outline" size="sm" onClick={handlePrint}>
+                <Printer className="h-4 w-4 mr-2" />
+                Print
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* PDF Content */}
+      <main className="container mx-auto px-6 py-6">
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          {/* Navigation Bar */}
+          <div className="bg-slate-100 px-4 py-3 flex items-center justify-between border-b print:hidden">
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={previousPage}
+                disabled={pageNumber <= 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-sm text-slate-600">
+                Page {pageNumber} of {numPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={nextPage}
+                disabled={pageNumber >= numPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="text-sm text-slate-600">
+              Version {policy.version} • {new Date(policy.date_issued).toLocaleDateString()}
+            </div>
+          </div>
+
+          {/* PDF Document */}
+          <div className="pdf-container flex justify-center p-4 bg-slate-50">
+            <div className="pdf-document bg-white shadow-lg">
+              <Document
+                file={pdfUrl}
+                onLoadSuccess={onDocumentLoadSuccess}
+                loading={
+                  <div className="flex items-center justify-center h-96">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-800"></div>
+                  </div>
+                }
+                error={
+                  <div className="flex items-center justify-center h-96 text-red-600">
+                    <div className="text-center">
+                      <XCircle className="h-12 w-12 mx-auto mb-2" />
+                      <p>Failed to load PDF document</p>
+                    </div>
+                  </div>
+                }
+              >
+                <Page
+                  pageNumber={pageNumber}
+                  scale={scale}
+                  className="pdf-page"
+                />
+              </Document>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
+
 // Header Component
 const Header = () => {
   const { user, logout } = useAuth();
