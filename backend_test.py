@@ -607,6 +607,12 @@ class PolicyRegisterAPITester:
         self.test_get_users_admin()
         self.test_file_upload_structure()
         
+        # Test enhanced features
+        self.test_policy_types_management()
+        self.test_enhanced_user_management()
+        self.test_enhanced_category_management()
+        self.test_enhanced_policy_management()
+        
         # Print summary
         print("\n" + "=" * 60)
         print(f"📊 Test Summary: {self.tests_passed}/{self.tests_run} tests passed")
