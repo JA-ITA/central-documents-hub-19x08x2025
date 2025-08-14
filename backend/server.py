@@ -14,7 +14,7 @@ import uuid
 from datetime import datetime, timedelta
 import jwt
 from passlib.context import CryptContext
-import aiofiles
+# import aiofiles
 import shutil
 from enum import Enum
 
