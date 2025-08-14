@@ -296,6 +296,7 @@ const Dashboard = () => {
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [showHidden, setShowHidden] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
+  const [showDeletedPolicyTypes, setShowDeletedPolicyTypes] = useState(false);
 
   useEffect(() => {
     fetchPolicies();
