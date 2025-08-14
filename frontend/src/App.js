@@ -49,8 +49,8 @@ import {
 } from 'lucide-react';
 import './App.css';
 
-// Set up PDF.js worker - use local worker to avoid CORS issues
-pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+// Set up PDF.js worker - disable worker to avoid CORS issues in production
+pdfjs.GlobalWorkerOptions.workerSrc = false;
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
