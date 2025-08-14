@@ -333,7 +333,12 @@ const Dashboard = () => {
 
   const fetchPolicyTypes = async () => {
     try {
-      const response = await axios.get(`${API}/policy-types`);
+      const params = new URLSearchParams();
+      if (user.role === 'admin') {
+        params.append('include_inactive', 'true');
+        if (showDeletedPolicyTypes) params.append('include_deleted', 'true');
+      }
+      const response = await axios.get(`${API}/policy-types?${params}`);
       setPolicyTypes(response.data);
     } catch (error) {
       console.error('Error fetching policy types:', error);
