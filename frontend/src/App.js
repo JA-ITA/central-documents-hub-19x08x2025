@@ -838,6 +838,15 @@ const Dashboard = () => {
     return type ? type.name : 'Unknown';
   };
 
+  const handleEditDocument = (policy) => {
+    setEditingPolicy(policy);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleViewPolicy = (policy) => {
+    navigate(`/policy/${policy.id}`);
+  };
+
   return (
     <div className="min-h-screen bg-slate-50">
       <Header />
