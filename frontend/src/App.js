@@ -49,8 +49,8 @@ import {
 } from 'lucide-react';
 import './App.css';
 
-// Set up PDF.js worker - disable worker to avoid CORS issues in production
-pdfjs.GlobalWorkerOptions.workerSrc = false;
+// Set up PDF.js worker - use jsdelivr CDN as fallback
+pdfjs.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
