@@ -303,7 +303,11 @@ async def create_category(category_data: CategoryCreate, current_user: User = De
 @api_router.get("/categories", response_model=List[Category])
 async def get_categories(current_user: User = Depends(get_current_user)):
     categories = await db.categories.find().to_list(None)
-    return [Category(**cat) for cat in categories]
+    result = []
+    for cat in categories:
+        cat.pop('_id', None)  # Remove MongoDB ObjectId
+        result.append(Category(**cat))
+    return result
 
 # Policy Routes
 @api_router.post("/policies")
