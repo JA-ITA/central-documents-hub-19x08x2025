@@ -1138,6 +1138,16 @@ const Dashboard = () => {
           )}
         </Tabs>
       </main>
+
+      {/* Document Edit Dialog */}
+      {editingPolicy && (
+        <DocumentEditDialog
+          policy={editingPolicy}
+          onUpdate={fetchPolicies}
+          isOpen={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+        />
+      )}
     </div>
   );
 };
