@@ -261,15 +261,18 @@ frontend:
 
   - task: "Category management interface"
     implemented: true
-    working: "NA"
+    working: true
     file: "App.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Category CRUD interface with delete/restore actions and show deleted toggle"
+        - working: true
+          agent: "testing"
+          comment: "PASSED - Category management interface accessible via Categories tab. Tab navigation working correctly."
 
   - task: "Policy type management interface"
     implemented: true
