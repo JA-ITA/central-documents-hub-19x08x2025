@@ -421,6 +421,7 @@ async def get_users(current_user: User = Depends(require_admin)):
     for user in users:
         user_dict = user.copy()
         user_dict.pop('password_hash', None)
+        user_dict.pop('_id', None)  # Remove MongoDB ObjectId
         result.append(User(**user_dict, password_hash=""))
     return result
 
