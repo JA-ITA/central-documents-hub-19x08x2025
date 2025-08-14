@@ -394,6 +394,7 @@ async def get_policy(policy_id: str, current_user: User = Depends(get_current_us
     policy = await db.policies.find_one({"id": policy_id})
     if not policy:
         raise HTTPException(status_code=404, detail="Policy not found")
+    policy.pop('_id', None)  # Remove MongoDB ObjectId
     return Policy(**policy)
 
 @api_router.get("/policies/{policy_id}/download")
