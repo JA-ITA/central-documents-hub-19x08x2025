@@ -200,15 +200,18 @@ backend:
 
   - task: "Document editing and replacement functionality"
     implemented: true
-    working: "NA"
+    working: true
     file: "server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Added PATCH /api/policies/{policy_id}/document endpoint for document replacement. Supports file upload, version increment, change summary, and maintains version history. Validates file types (PDF/DOCX) and updates policy with new document info."
+        - working: true
+          agent: "testing"
+          comment: "COMPREHENSIVE DOCUMENT EDITING TESTING COMPLETED - 30/30 tests passed (100% success rate). All requested functionality working perfectly: ✅ Authentication & Authorization: Admin and policy_manager users can access endpoint, regular users properly denied (403), invalid tokens properly rejected (401). ✅ Document Upload & Replacement: Successful PDF and DOCX file replacement, invalid file types properly rejected (400), large file handling works correctly. ✅ Version Management: Version numbers increment correctly after replacement, version history maintained and updated with proper metadata (uploaded_by, change_summary, file_url). ✅ Policy Data Updates: Policy document info updated correctly (file_url, file_name, version), modified_by and modified_at fields set properly, policy ID and core data preserved. ✅ Error Handling: Non-existent policy ID returns 404, missing file upload returns 422 validation error, empty change summary uses default value. ✅ Regression Testing: All existing functionality remains working (get policies, authentication, file download, visibility toggle). The document editing feature is production-ready and fully integrated with existing system."
 
 frontend:
   - task: "Admin dashboard with comprehensive UI"
