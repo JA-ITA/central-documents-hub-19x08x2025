@@ -263,20 +263,9 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus:
-    - "User authentication and authorization"
-    - "Policy visibility management (remove from user view)"
-    - "Policy delete and restore functionality"
-    - "Category CRUD with delete/restore"
-    - "User management (suspend/delete/restore/role change)"
-    - "Policy type creation and management"
-    - "Admin dashboard with comprehensive UI"
-    - "Policy management interface"
-    - "User management interface"
-    - "Category management interface"
-    - "Policy type management interface"
+  current_focus: []
   stuck_tasks: []
-  test_all: true
+  test_all: false
   test_priority: "high_first"
 
 agent_communication:
