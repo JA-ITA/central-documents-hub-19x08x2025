@@ -740,6 +740,8 @@ const Dashboard = () => {
               policyTypes={policyTypes} 
               onUpdate={fetchPolicyTypes} 
               userRole={user.role}
+              showDeleted={showDeletedPolicyTypes}
+              onShowDeletedChange={setShowDeletedPolicyTypes}
             />
           </TabsContent>
 
