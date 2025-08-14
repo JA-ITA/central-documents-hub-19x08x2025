@@ -4,11 +4,16 @@ import json
 from datetime import datetime
 
 class PolicyRegisterAPITester:
-    def __init__(self, base_url="https://policyhub-1.preview.emergentagent.com"):
+    def __init__(self, base_url="https://1a2700c4-f211-433b-868e-21d0913b895c.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.token = None
         self.admin_user = None
+        self.admin_user_id = None
+        self.test_user_id = None
+        self.test_category_id = None
+        self.test_policy_type_id = None
+        self.test_policy_id = None
         self.tests_run = 0
         self.tests_passed = 0
         self.test_results = []
