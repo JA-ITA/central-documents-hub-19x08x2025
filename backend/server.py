@@ -386,7 +386,9 @@ async def create_category(category_data: CategoryCreate, current_user: User = De
     if existing_category:
         raise HTTPException(status_code=400, detail="Category code already exists")
     
-    category = Category(**category_data.dict(), code=category_data.code.upper())
+    category_dict = category_data.dict()
+    category_dict["code"] = category_data.code.upper()
+    category = Category(**category_dict)
     await db.categories.insert_one(category.dict())
     return category
 
