@@ -637,6 +637,71 @@ async def restore_policy(policy_id: str, current_user: User = Depends(require_ad
         raise HTTPException(status_code=404, detail="Policy not found")
     return {"message": "Policy restored successfully"}
 
+@api_router.patch("/policies/{policy_id}/document")
+async def update_policy_document(
+    policy_id: str,
+    file: UploadFile = File(...),
+    change_summary: Optional[str] = Form("Document updated"),
+    current_user: User = Depends(require_admin_or_manager)
+):
+    """Update/replace the document for an existing policy"""
+    # Validate file type
+    if not file.filename.lower().endswith(('.pdf', '.docx')):
+        raise HTTPException(status_code=400, detail="Only PDF and DOCX files are allowed")
+    
+    # Get existing policy
+    existing_policy = await db.policies.find_one({"id": policy_id})
+    if not existing_policy:
+        raise HTTPException(status_code=404, detail="Policy not found")
+    
+    # Generate new file name with incremented version
+    new_version = existing_policy["version"] + 1
+    file_extension = file.filename.split('.')[-1]
+    policy_number = existing_policy["policy_number"]
+    saved_filename = f"{policy_number.replace('-', '_')}_v{new_version}.{file_extension}"
+    file_path = UPLOAD_DIR / saved_filename
+    
+    # Save new file
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    
+    new_file_url = f"/uploads/{saved_filename}"
+    
+    # Create new version history entry
+    new_version_entry = PolicyVersion(
+        version_number=new_version,
+        upload_date=datetime.utcnow(),
+        uploaded_by=current_user.username,
+        change_summary=change_summary or "Document updated",
+        file_url=new_file_url,
+        file_name=file.filename
+    )
+    
+    # Update policy with new document and version
+    update_data = {
+        "version": new_version,
+        "file_url": new_file_url,
+        "file_name": file.filename,
+        "modified_by": current_user.username,
+        "modified_at": datetime.utcnow(),
+        "$push": {"version_history": new_version_entry.dict()}
+    }
+    
+    result = await db.policies.update_one(
+        {"id": policy_id},
+        {"$set": {k: v for k, v in update_data.items() if k != "$push"},
+         "$push": update_data["$push"]}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Failed to update policy")
+    
+    return {
+        "message": "Policy document updated successfully", 
+        "new_version": new_version,
+        "file_url": new_file_url
+    }
+
 @api_router.get("/policies/{policy_id}/download")
 async def download_policy(policy_id: str, current_user: User = Depends(get_current_user)):
     policy = await db.policies.find_one({"id": policy_id})
