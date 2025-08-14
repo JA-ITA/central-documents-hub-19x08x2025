@@ -505,6 +505,128 @@ const Header = () => {
   );
 };
 
+// Document Edit Dialog Component
+const DocumentEditDialog = ({ policy, onUpdate, isOpen, onOpenChange }) => {
+  const [file, setFile] = useState(null);
+  const [changeSummary, setChangeSummary] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      // Validate file type
+      if (!selectedFile.name.toLowerCase().endsWith('.pdf') && !selectedFile.name.toLowerCase().endsWith('.docx')) {
+        setError('Only PDF and DOCX files are allowed');
+        return;
+      }
+      setFile(selectedFile);
+      setError('');
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!file) {
+      setError('Please select a file');
+      return;
+    }
+
+    setUploading(true);
+    setError('');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('change_summary', changeSummary || 'Document updated');
+
+      await axios.patch(`${API}/policies/${policy.id}/document`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      // Reset form
+      setFile(null);
+      setChangeSummary('');
+      onOpenChange(false);
+      onUpdate();
+      
+      // Reset file input
+      const fileInput = document.getElementById('document-file');
+      if (fileInput) fileInput.value = '';
+    } catch (error) {
+      console.error('Error updating document:', error);
+      setError(error.response?.data?.detail || 'Failed to update document');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit Policy Document</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label>Current Document</Label>
+            <div className="text-sm text-slate-600">
+              <p>{policy.file_name}</p>
+              <p>Version {policy.version}</p>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="document-file">New Document *</Label>
+            <Input
+              id="document-file"
+              type="file"
+              accept=".pdf,.docx"
+              onChange={handleFileChange}
+              required
+            />
+            <p className="text-sm text-slate-500">Supported formats: PDF, DOCX</p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="change-summary">Change Summary</Label>
+            <Textarea
+              id="change-summary"
+              value={changeSummary}
+              onChange={(e) => setChangeSummary(e.target.value)}
+              placeholder="Describe the changes made to the document..."
+              rows={3}
+            />
+          </div>
+
+          {error && (
+            <Alert className="border-red-200 bg-red-50">
+              <XCircle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-700">{error}</AlertDescription>
+            </Alert>
+          )}
+
+          <div className="flex space-x-2 justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={uploading}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={uploading}>
+              {uploading ? 'Updating...' : 'Update Document'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 // Dashboard Component
 const Dashboard = () => {
   const { user } = useAuth();
