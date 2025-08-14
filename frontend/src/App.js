@@ -13,6 +13,7 @@ import { Label } from './components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './components/ui/table';
 import { Separator } from './components/ui/separator';
 import { Alert, AlertDescription } from './components/ui/alert';
+import { Switch } from './components/ui/switch';
 import { 
   FileText, 
   Users, 
@@ -28,7 +29,14 @@ import {
   Search,
   Filter,
   LogOut,
-  User
+  User,
+  EyeOff,
+  Trash2,
+  RefreshCw,
+  UserX,
+  UserCheck,
+  Edit,
+  Archive
 } from 'lucide-react';
 import './App.css';
 
@@ -282,21 +290,30 @@ const Dashboard = () => {
   const [policies, setPolicies] = useState([]);
   const [categories, setCategories] = useState([]);
   const [users, setUsers] = useState([]);
+  const [policyTypes, setPolicyTypes] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const [showHidden, setShowHidden] = useState(false);
+  const [showDeleted, setShowDeleted] = useState(false);
 
   useEffect(() => {
     fetchPolicies();
     fetchCategories();
+    fetchPolicyTypes();
     if (user.role === 'admin') {
       fetchUsers();
     }
-  }, [user]);
+  }, [user, showHidden, showDeleted]);
 
   const fetchPolicies = async () => {
     try {
-      const response = await axios.get(`${API}/policies`);
+      const params = new URLSearchParams();
+      if (user.role === 'admin') {
+        if (showHidden) params.append('include_hidden', 'true');
+        if (showDeleted) params.append('include_deleted', 'true');
+      }
+      const response = await axios.get(`${API}/policies?${params}`);
       setPolicies(response.data);
     } catch (error) {
       console.error('Error fetching policies:', error);
@@ -305,16 +322,27 @@ const Dashboard = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get(`${API}/categories`);
+      const params = user.role === 'admin' && showDeleted ? '?include_deleted=true' : '';
+      const response = await axios.get(`${API}/categories${params}`);
       setCategories(response.data);
     } catch (error) {
       console.error('Error fetching categories:', error);
     }
   };
 
+  const fetchPolicyTypes = async () => {
+    try {
+      const response = await axios.get(`${API}/policy-types`);
+      setPolicyTypes(response.data);
+    } catch (error) {
+      console.error('Error fetching policy types:', error);
+    }
+  };
+
   const fetchUsers = async () => {
     try {
-      const response = await axios.get(`${API}/users`);
+      const params = showDeleted ? '?include_deleted=true' : '';
+      const response = await axios.get(`${API}/users${params}`);
       setUsers(response.data);
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -340,12 +368,102 @@ const Dashboard = () => {
     }
   };
 
+  // Policy management functions
+  const togglePolicyVisibility = async (policyId, isVisible) => {
+    try {
+      await axios.patch(`${API}/policies/${policyId}/visibility?is_visible=${!isVisible}`);
+      fetchPolicies();
+    } catch (error) {
+      console.error('Error toggling policy visibility:', error);
+    }
+  };
+
+  const deletePolicy = async (policyId) => {
+    if (window.confirm('Are you sure you want to delete this policy?')) {
+      try {
+        await axios.delete(`${API}/policies/${policyId}`);
+        fetchPolicies();
+      } catch (error) {
+        console.error('Error deleting policy:', error);
+      }
+    }
+  };
+
+  const restorePolicy = async (policyId) => {
+    try {
+      await axios.patch(`${API}/policies/${policyId}/restore`);
+      fetchPolicies();
+    } catch (error) {
+      console.error('Error restoring policy:', error);
+    }
+  };
+
+  // User management functions
   const handleApproveUser = async (userId) => {
     try {
       await axios.patch(`${API}/users/${userId}/approve`);
       fetchUsers();
     } catch (error) {
       console.error('Error approving user:', error);
+    }
+  };
+
+  const handleSuspendUser = async (userId) => {
+    try {
+      await axios.patch(`${API}/users/${userId}/suspend`);
+      fetchUsers();
+    } catch (error) {
+      console.error('Error suspending user:', error);
+    }
+  };
+
+  const handleDeleteUser = async (userId) => {
+    if (window.confirm('Are you sure you want to delete this user?')) {
+      try {
+        await axios.delete(`${API}/users/${userId}`);
+        fetchUsers();
+      } catch (error) {
+        console.error('Error deleting user:', error);
+      }
+    }
+  };
+
+  const handleRestoreUser = async (userId) => {
+    try {
+      await axios.patch(`${API}/users/${userId}/restore`);
+      fetchUsers();
+    } catch (error) {
+      console.error('Error restoring user:', error);
+    }
+  };
+
+  const handleChangeUserRole = async (userId, newRole) => {
+    try {
+      await axios.patch(`${API}/users/${userId}/role?role=${newRole}`);
+      fetchUsers();
+    } catch (error) {
+      console.error('Error changing user role:', error);
+    }
+  };
+
+  // Category management functions
+  const deleteCategory = async (categoryId) => {
+    if (window.confirm('Are you sure you want to delete this category?')) {
+      try {
+        await axios.delete(`${API}/categories/${categoryId}`);
+        fetchCategories();
+      } catch (error) {
+        console.error('Error deleting category:', error);
+      }
+    }
+  };
+
+  const restoreCategory = async (categoryId) => {
+    try {
+      await axios.patch(`${API}/categories/${categoryId}/restore`);
+      fetchCategories();
+    } catch (error) {
+      console.error('Error restoring category:', error);
     }
   };
 
@@ -363,13 +481,18 @@ const Dashboard = () => {
     return category ? category.name : 'Unknown';
   };
 
+  const getPolicyTypeName = (policyTypeId) => {
+    const type = policyTypes.find(pt => pt.id === policyTypeId);
+    return type ? type.name : 'Unknown';
+  };
+
   return (
     <div className="min-h-screen bg-slate-50">
       <Header />
       
       <main className="container mx-auto px-6 py-8">
         <Tabs defaultValue="policies" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="policies" className="flex items-center space-x-2">
               <FileText className="h-4 w-4" />
               <span>Policies</span>
@@ -377,6 +500,10 @@ const Dashboard = () => {
             <TabsTrigger value="categories" className="flex items-center space-x-2">
               <FolderOpen className="h-4 w-4" />
               <span>Categories</span>
+            </TabsTrigger>
+            <TabsTrigger value="policy-types" className="flex items-center space-x-2">
+              <Settings className="h-4 w-4" />
+              <span>Policy Types</span>
             </TabsTrigger>
             {user.role === 'admin' && (
               <TabsTrigger value="users" className="flex items-center space-x-2">
@@ -395,10 +522,34 @@ const Dashboard = () => {
           <TabsContent value="policies" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Policy Management</CardTitle>
-                <CardDescription>
-                  Browse, search, and manage organizational policies
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Policy Management</CardTitle>
+                    <CardDescription>
+                      Browse, search, and manage organizational policies
+                    </CardDescription>
+                  </div>
+                  {user.role === 'admin' && (
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-2">
+                        <Label htmlFor="show-hidden">Show Hidden</Label>
+                        <Switch
+                          id="show-hidden"
+                          checked={showHidden}
+                          onCheckedChange={setShowHidden}
+                        />
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Label htmlFor="show-deleted">Show Deleted</Label>
+                        <Switch
+                          id="show-deleted"
+                          checked={showDeleted}
+                          onCheckedChange={setShowDeleted}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex flex-col md:flex-row gap-4">
@@ -424,9 +575,9 @@ const Dashboard = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">All Categories</SelectItem>
-                        {categories.map(category => (
+                        {categories.filter(cat => !cat.is_deleted || showDeleted).map(category => (
                           <SelectItem key={category.id} value={category.id}>
-                            {category.name}
+                            {category.name} {category.is_deleted && '(Deleted)'}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -443,6 +594,8 @@ const Dashboard = () => {
                         <SelectItem value="all">All Status</SelectItem>
                         <SelectItem value="active">Active</SelectItem>
                         <SelectItem value="archived">Archived</SelectItem>
+                        <SelectItem value="hidden">Hidden</SelectItem>
+                        <SelectItem value="deleted">Deleted</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -458,6 +611,7 @@ const Dashboard = () => {
                         <TableHead>Type</TableHead>
                         <TableHead>Version</TableHead>
                         <TableHead>Status</TableHead>
+                        <TableHead>Visibility</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -476,16 +630,29 @@ const Dashboard = () => {
                             </Badge>
                           </TableCell>
                           <TableCell className="capitalize">
-                            {policy.policy_type.replace('_', ' ')}
+                            {getPolicyTypeName(policy.policy_type_id)}
                           </TableCell>
                           <TableCell>v{policy.version}</TableCell>
                           <TableCell>
                             <Badge 
-                              variant={policy.status === 'active' ? 'default' : 'outline'}
-                              className={policy.status === 'active' ? 'bg-green-600' : ''}
+                              variant={
+                                policy.status === 'active' ? 'default' : 
+                                policy.status === 'deleted' ? 'destructive' : 'outline'
+                              }
+                              className={
+                                policy.status === 'active' ? 'bg-green-600' :
+                                policy.status === 'deleted' ? 'bg-red-600' : ''
+                              }
                             >
                               {policy.status}
                             </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {policy.is_visible_to_users ? (
+                              <Eye className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <EyeOff className="h-4 w-4 text-red-600" />
+                            )}
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center space-x-2">
@@ -505,6 +672,40 @@ const Dashboard = () => {
                               >
                                 <Download className="h-4 w-4" />
                               </Button>
+                              {user.role === 'admin' && (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => togglePolicyVisibility(policy.id, policy.is_visible_to_users)}
+                                    className="h-8 px-2"
+                                    title={policy.is_visible_to_users ? "Hide from users" : "Show to users"}
+                                  >
+                                    {policy.is_visible_to_users ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                  </Button>
+                                  {policy.status === 'deleted' ? (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => restorePolicy(policy.id)}
+                                      className="h-8 px-2 text-green-600"
+                                      title="Restore policy"
+                                    >
+                                      <RefreshCw className="h-4 w-4" />
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => deletePolicy(policy.id)}
+                                      className="h-8 px-2 text-red-600"
+                                      title="Delete policy"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </>
+                              )}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -517,18 +718,48 @@ const Dashboard = () => {
           </TabsContent>
 
           <TabsContent value="categories">
-            <CategoryManager categories={categories} onUpdate={fetchCategories} />
+            <CategoryManager 
+              categories={categories} 
+              onUpdate={fetchCategories} 
+              showDeleted={showDeleted}
+              onShowDeletedChange={setShowDeleted}
+              onDelete={deleteCategory}
+              onRestore={restoreCategory}
+              userRole={user.role}
+            />
+          </TabsContent>
+
+          <TabsContent value="policy-types">
+            <PolicyTypeManager 
+              policyTypes={policyTypes} 
+              onUpdate={fetchPolicyTypes} 
+              userRole={user.role}
+            />
           </TabsContent>
 
           {user.role === 'admin' && (
             <TabsContent value="users">
-              <UserManager users={users} onUpdate={fetchUsers} onApprove={handleApproveUser} />
+              <UserManager 
+                users={users} 
+                onUpdate={fetchUsers}
+                showDeleted={showDeleted}
+                onShowDeletedChange={setShowDeleted}
+                onApprove={handleApproveUser}
+                onSuspend={handleSuspendUser}
+                onDelete={handleDeleteUser}
+                onRestore={handleRestoreUser}
+                onChangeRole={handleChangeUserRole}
+              />
             </TabsContent>
           )}
 
           {(user.role === 'admin' || user.role === 'policy_manager') && (
             <TabsContent value="upload">
-              <PolicyUploader categories={categories} onUpload={fetchPolicies} />
+              <PolicyUploader 
+                categories={categories.filter(cat => !cat.is_deleted)} 
+                policyTypes={policyTypes.filter(pt => pt.is_active)}
+                onUpload={fetchPolicies} 
+              />
             </TabsContent>
           )}
         </Tabs>
@@ -537,12 +768,140 @@ const Dashboard = () => {
   );
 };
 
-// Policy Uploader Component
-const PolicyUploader = ({ categories, onUpload }) => {
+// Policy Type Manager Component
+const PolicyTypeManager = ({ policyTypes, onUpdate, userRole }) => {
+  const [newPolicyType, setNewPolicyType] = useState({ name: '', code: '', description: '' });
+  const [isAddingPolicyType, setIsAddingPolicyType] = useState(false);
+
+  const handleAddPolicyType = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(`${API}/policy-types`, newPolicyType);
+      setNewPolicyType({ name: '', code: '', description: '' });
+      setIsAddingPolicyType(false);
+      onUpdate();
+    } catch (error) {
+      console.error('Error adding policy type:', error);
+    }
+  };
+
+  const togglePolicyType = async (typeId, isActive) => {
+    try {
+      await axios.patch(`${API}/policy-types/${typeId}?is_active=${!isActive}`);
+      onUpdate();
+    } catch (error) {
+      console.error('Error updating policy type:', error);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Policy Type Management</CardTitle>
+            <CardDescription>Manage policy types and their status</CardDescription>
+          </div>
+          {userRole === 'admin' && (
+            <Dialog open={isAddingPolicyType} onOpenChange={setIsAddingPolicyType}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Policy Type
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add New Policy Type</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleAddPolicyType} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="type-name">Name</Label>
+                    <Input
+                      id="type-name"
+                      value={newPolicyType.name}
+                      onChange={(e) => setNewPolicyType({...newPolicyType, name: e.target.value})}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="type-code">Code</Label>
+                    <Input
+                      id="type-code"
+                      value={newPolicyType.code}
+                      onChange={(e) => setNewPolicyType({...newPolicyType, code: e.target.value.toUpperCase()})}
+                      placeholder="e.g., P, PR, G"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="type-desc">Description</Label>
+                    <Textarea
+                      id="type-desc"
+                      value={newPolicyType.description}
+                      onChange={(e) => setNewPolicyType({...newPolicyType, description: e.target.value})}
+                    />
+                  </div>
+                  <Button type="submit" className="w-full">Add Policy Type</Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="border rounded-lg">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Code</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Status</TableHead>
+                {userRole === 'admin' && <TableHead>Actions</TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {policyTypes.map(type => (
+                <TableRow key={type.id}>
+                  <TableCell className="font-medium">{type.name}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{type.code}</Badge>
+                  </TableCell>
+                  <TableCell className="text-sm text-slate-600">{type.description}</TableCell>
+                  <TableCell>
+                    <Badge variant={type.is_active ? 'default' : 'secondary'}>
+                      {type.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </TableCell>
+                  {userRole === 'admin' && (
+                    <TableCell>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => togglePolicyType(type.id, type.is_active)}
+                        className="h-8 px-2"
+                      >
+                        {type.is_active ? 'Deactivate' : 'Activate'}
+                      </Button>
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// Enhanced Policy Uploader Component
+const PolicyUploader = ({ categories, policyTypes, onUpload }) => {
   const [formData, setFormData] = useState({
     title: '',
     category_id: '',
-    policy_type: 'policy',
+    policy_type_id: '',
     date_issued: '',
     owner_department: '',
     policy_number: '',
@@ -575,7 +934,7 @@ const PolicyUploader = ({ categories, onUpload }) => {
       setFormData({
         title: '',
         category_id: '',
-        policy_type: 'policy',
+        policy_type_id: '',
         date_issued: '',
         owner_department: '',
         policy_number: '',
@@ -629,14 +988,16 @@ const PolicyUploader = ({ categories, onUpload }) => {
 
             <div className="space-y-2">
               <Label htmlFor="policy_type">Type *</Label>
-              <Select value={formData.policy_type} onValueChange={(value) => setFormData({...formData, policy_type: value})}>
+              <Select value={formData.policy_type_id} onValueChange={(value) => setFormData({...formData, policy_type_id: value})}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="policy">Policy</SelectItem>
-                  <SelectItem value="procedure">Procedure</SelectItem>
-                  <SelectItem value="guideline">Guideline</SelectItem>
+                  {policyTypes.map(type => (
+                    <SelectItem key={type.id} value={type.id}>
+                      {type.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -711,8 +1072,8 @@ const PolicyUploader = ({ categories, onUpload }) => {
   );
 };
 
-// Category Manager Component
-const CategoryManager = ({ categories, onUpdate }) => {
+// Enhanced Category Manager Component
+const CategoryManager = ({ categories, onUpdate, showDeleted, onShowDeletedChange, onDelete, onRestore, userRole }) => {
   const [newCategory, setNewCategory] = useState({ name: '', code: '', description: '' });
   const [isAddingCategory, setIsAddingCategory] = useState(false);
 
@@ -736,61 +1097,103 @@ const CategoryManager = ({ categories, onUpdate }) => {
             <CardTitle>Category Management</CardTitle>
             <CardDescription>Manage policy categories and types</CardDescription>
           </div>
-          <Dialog open={isAddingCategory} onOpenChange={setIsAddingCategory}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Category
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add New Category</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleAddCategory} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="cat-name">Name</Label>
-                  <Input
-                    id="cat-name"
-                    value={newCategory.name}
-                    onChange={(e) => setNewCategory({...newCategory, name: e.target.value})}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cat-code">Code</Label>
-                  <Input
-                    id="cat-code"
-                    value={newCategory.code}
-                    onChange={(e) => setNewCategory({...newCategory, code: e.target.value.toUpperCase()})}
-                    placeholder="e.g., HR, FIN, OPS"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cat-desc">Description</Label>
-                  <Textarea
-                    id="cat-desc"
-                    value={newCategory.description}
-                    onChange={(e) => setNewCategory({...newCategory, description: e.target.value})}
-                  />
-                </div>
-                <Button type="submit" className="w-full">Add Category</Button>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <div className="flex items-center space-x-4">
+            {userRole === 'admin' && (
+              <div className="flex items-center space-x-2">
+                <Label htmlFor="show-deleted-cats">Show Deleted</Label>
+                <Switch
+                  id="show-deleted-cats"
+                  checked={showDeleted}
+                  onCheckedChange={onShowDeletedChange}
+                />
+              </div>
+            )}
+            {(userRole === 'admin' || userRole === 'policy_manager') && (
+              <Dialog open={isAddingCategory} onOpenChange={setIsAddingCategory}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Category
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add New Category</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleAddCategory} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="cat-name">Name</Label>
+                      <Input
+                        id="cat-name"
+                        value={newCategory.name}
+                        onChange={(e) => setNewCategory({...newCategory, name: e.target.value})}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="cat-code">Code</Label>
+                      <Input
+                        id="cat-code"
+                        value={newCategory.code}
+                        onChange={(e) => setNewCategory({...newCategory, code: e.target.value.toUpperCase()})}
+                        placeholder="e.g., HR, FIN, OPS"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="cat-desc">Description</Label>
+                      <Textarea
+                        id="cat-desc"
+                        value={newCategory.description}
+                        onChange={(e) => setNewCategory({...newCategory, description: e.target.value})}
+                      />
+                    </div>
+                    <Button type="submit" className="w-full">Add Category</Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {categories.map(category => (
-            <Card key={category.id} className="border">
+            <Card key={category.id} className={`border ${category.is_deleted ? 'opacity-60 bg-red-50' : ''}`}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-2">
                   <Badge variant="outline">{category.code}</Badge>
+                  {userRole === 'admin' && (
+                    <div className="flex items-center space-x-1">
+                      {category.is_deleted ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => onRestore(category.id)}
+                          className="h-8 px-2 text-green-600"
+                          title="Restore category"
+                        >
+                          <RefreshCw className="h-3 w-3" />
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => onDelete(category.id)}
+                          className="h-8 px-2 text-red-600"
+                          title="Delete category"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <h3 className="font-medium">{category.name}</h3>
                 <p className="text-sm text-slate-600 mt-1">{category.description}</p>
+                {category.is_deleted && (
+                  <Badge variant="destructive" className="mt-2">Deleted</Badge>
+                )}
               </CardContent>
             </Card>
           ))}
@@ -800,16 +1203,38 @@ const CategoryManager = ({ categories, onUpdate }) => {
   );
 };
 
-// User Manager Component
-const UserManager = ({ users, onUpdate, onApprove }) => {
-  const pendingUsers = users.filter(user => !user.is_approved);
-  const activeUsers = users.filter(user => user.is_approved);
+// Enhanced User Manager Component
+const UserManager = ({ 
+  users, 
+  onUpdate, 
+  showDeleted, 
+  onShowDeletedChange,
+  onApprove, 
+  onSuspend, 
+  onDelete, 
+  onRestore, 
+  onChangeRole 
+}) => {
+  const pendingUsers = users.filter(user => !user.is_approved && !user.is_deleted);
+  const activeUsers = users.filter(user => user.is_approved || showDeleted);
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>User Management</CardTitle>
-        <CardDescription>Manage user accounts and permissions</CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>User Management</CardTitle>
+            <CardDescription>Manage user accounts and permissions</CardDescription>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Label htmlFor="show-deleted-users">Show Deleted</Label>
+            <Switch
+              id="show-deleted-users"
+              checked={showDeleted}
+              onCheckedChange={onShowDeletedChange}
+            />
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="space-y-6">
         {pendingUsers.length > 0 && (
@@ -852,7 +1277,7 @@ const UserManager = ({ users, onUpdate, onApprove }) => {
         <Separator />
 
         <div>
-          <h3 className="font-medium text-lg mb-4">Active Users</h3>
+          <h3 className="font-medium text-lg mb-4">All Users</h3>
           <div className="border rounded-lg">
             <Table>
               <TableHeader>
@@ -862,23 +1287,85 @@ const UserManager = ({ users, onUpdate, onApprove }) => {
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {activeUsers.map(user => (
-                  <TableRow key={user.id}>
+                  <TableRow key={user.id} className={user.is_deleted ? 'opacity-60 bg-red-50' : ''}>
                     <TableCell>{user.username}</TableCell>
                     <TableCell>{user.full_name}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="capitalize">
-                        {user.role.replace('_', ' ')}
-                      </Badge>
+                      <Select
+                        value={user.role}
+                        onValueChange={(newRole) => onChangeRole(user.id, newRole)}
+                      >
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="user">User</SelectItem>
+                          <SelectItem value="policy_manager">Policy Manager</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={user.is_active ? 'default' : 'secondary'}>
-                        {user.is_active ? 'Active' : 'Inactive'}
-                      </Badge>
+                      <div className="flex flex-col space-y-1">
+                        <Badge variant={user.is_active && user.is_approved ? 'default' : 'secondary'}>
+                          {user.is_deleted ? 'Deleted' : user.is_suspended ? 'Suspended' : 
+                           user.is_active && user.is_approved ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        {user.is_deleted ? (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => onRestore(user.id)}
+                            className="h-8 px-2 text-green-600"
+                            title="Restore user"
+                          >
+                            <RefreshCw className="h-4 w-4" />
+                          </Button>
+                        ) : (
+                          <>
+                            {user.is_suspended ? (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => onRestore(user.id)}
+                                className="h-8 px-2 text-green-600"
+                                title="Restore user"
+                              >
+                                <UserCheck className="h-4 w-4" />
+                              </Button>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => onSuspend(user.id)}
+                                className="h-8 px-2 text-yellow-600"
+                                title="Suspend user"
+                              >
+                                <UserX className="h-4 w-4" />
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => onDelete(user.id)}
+                              className="h-8 px-2 text-red-600"
+                              title="Delete user"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
