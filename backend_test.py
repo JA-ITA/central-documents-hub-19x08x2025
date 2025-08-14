@@ -107,7 +107,9 @@ class PolicyRegisterAPITester:
         if success and 'access_token' in response:
             self.token = response['access_token']
             self.admin_user = response.get('user', {})
+            self.admin_user_id = self.admin_user.get('id')
             print(f"   Admin user role: {self.admin_user.get('role', 'unknown')}")
+            print(f"   Admin user ID: {self.admin_user_id}")
             return True
         return False
 
