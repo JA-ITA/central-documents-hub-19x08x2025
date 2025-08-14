@@ -768,8 +768,8 @@ const Dashboard = () => {
   );
 };
 
-// Policy Type Manager Component
-const PolicyTypeManager = ({ policyTypes, onUpdate, userRole }) => {
+// Enhanced Policy Type Manager Component
+const PolicyTypeManager = ({ policyTypes, onUpdate, userRole, showDeleted, onShowDeletedChange }) => {
   const [newPolicyType, setNewPolicyType] = useState({ name: '', code: '', description: '' });
   const [isAddingPolicyType, setIsAddingPolicyType] = useState(false);
 
@@ -787,10 +787,30 @@ const PolicyTypeManager = ({ policyTypes, onUpdate, userRole }) => {
 
   const togglePolicyType = async (typeId, isActive) => {
     try {
-      await axios.patch(`${API}/policy-types/${typeId}?is_active=${!isActive}`);
+      await axios.patch(`${API}/policy-types/${typeId}`, { is_active: !isActive });
       onUpdate();
     } catch (error) {
       console.error('Error updating policy type:', error);
+    }
+  };
+
+  const deletePolicyType = async (typeId) => {
+    if (window.confirm('Are you sure you want to delete this policy type?')) {
+      try {
+        await axios.delete(`${API}/policy-types/${typeId}`);
+        onUpdate();
+      } catch (error) {
+        console.error('Error deleting policy type:', error);
+      }
+    }
+  };
+
+  const restorePolicyType = async (typeId) => {
+    try {
+      await axios.patch(`${API}/policy-types/${typeId}/restore`);
+      onUpdate();
+    } catch (error) {
+      console.error('Error restoring policy type:', error);
     }
   };
 
@@ -802,51 +822,63 @@ const PolicyTypeManager = ({ policyTypes, onUpdate, userRole }) => {
             <CardTitle>Policy Type Management</CardTitle>
             <CardDescription>Manage policy types and their status</CardDescription>
           </div>
-          {userRole === 'admin' && (
-            <Dialog open={isAddingPolicyType} onOpenChange={setIsAddingPolicyType}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Policy Type
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Add New Policy Type</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handleAddPolicyType} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="type-name">Name</Label>
-                    <Input
-                      id="type-name"
-                      value={newPolicyType.name}
-                      onChange={(e) => setNewPolicyType({...newPolicyType, name: e.target.value})}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="type-code">Code</Label>
-                    <Input
-                      id="type-code"
-                      value={newPolicyType.code}
-                      onChange={(e) => setNewPolicyType({...newPolicyType, code: e.target.value.toUpperCase()})}
-                      placeholder="e.g., P, PR, G"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="type-desc">Description</Label>
-                    <Textarea
-                      id="type-desc"
-                      value={newPolicyType.description}
-                      onChange={(e) => setNewPolicyType({...newPolicyType, description: e.target.value})}
-                    />
-                  </div>
-                  <Button type="submit" className="w-full">Add Policy Type</Button>
-                </form>
-              </DialogContent>
-            </Dialog>
-          )}
+          <div className="flex items-center space-x-4">
+            {userRole === 'admin' && (
+              <div className="flex items-center space-x-2">
+                <Label htmlFor="show-deleted-types">Show Deleted</Label>
+                <Switch
+                  id="show-deleted-types"
+                  checked={showDeleted}
+                  onCheckedChange={onShowDeletedChange}
+                />
+              </div>
+            )}
+            {userRole === 'admin' && (
+              <Dialog open={isAddingPolicyType} onOpenChange={setIsAddingPolicyType}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Policy Type
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add New Policy Type</DialogTitle>
+                  </DialogHeader>
+                  <form onSubmit={handleAddPolicyType} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="type-name">Name</Label>
+                      <Input
+                        id="type-name"
+                        value={newPolicyType.name}
+                        onChange={(e) => setNewPolicyType({...newPolicyType, name: e.target.value})}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="type-code">Code</Label>
+                      <Input
+                        id="type-code"
+                        value={newPolicyType.code}
+                        onChange={(e) => setNewPolicyType({...newPolicyType, code: e.target.value.toUpperCase()})}
+                        placeholder="e.g., P, PR, G"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="type-desc">Description</Label>
+                      <Textarea
+                        id="type-desc"
+                        value={newPolicyType.description}
+                        onChange={(e) => setNewPolicyType({...newPolicyType, description: e.target.value})}
+                      />
+                    </div>
+                    <Button type="submit" className="w-full">Add Policy Type</Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -863,27 +895,55 @@ const PolicyTypeManager = ({ policyTypes, onUpdate, userRole }) => {
             </TableHeader>
             <TableBody>
               {policyTypes.map(type => (
-                <TableRow key={type.id}>
+                <TableRow key={type.id} className={type.is_deleted ? 'opacity-60 bg-red-50' : ''}>
                   <TableCell className="font-medium">{type.name}</TableCell>
                   <TableCell>
                     <Badge variant="outline">{type.code}</Badge>
                   </TableCell>
                   <TableCell className="text-sm text-slate-600">{type.description}</TableCell>
                   <TableCell>
-                    <Badge variant={type.is_active ? 'default' : 'secondary'}>
-                      {type.is_active ? 'Active' : 'Inactive'}
-                    </Badge>
+                    <div className="flex flex-col space-y-1">
+                      <Badge variant={type.is_deleted ? 'destructive' : type.is_active ? 'default' : 'secondary'}>
+                        {type.is_deleted ? 'Deleted' : type.is_active ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </div>
                   </TableCell>
                   {userRole === 'admin' && (
                     <TableCell>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => togglePolicyType(type.id, type.is_active)}
-                        className="h-8 px-2"
-                      >
-                        {type.is_active ? 'Deactivate' : 'Activate'}
-                      </Button>
+                      <div className="flex items-center space-x-2">
+                        {type.is_deleted ? (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => restorePolicyType(type.id)}
+                            className="h-8 px-2 text-green-600"
+                            title="Restore policy type"
+                          >
+                            <RefreshCw className="h-4 w-4" />
+                          </Button>
+                        ) : (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => togglePolicyType(type.id, type.is_active)}
+                              className="h-8 px-2"
+                              title={type.is_active ? "Deactivate" : "Activate"}
+                            >
+                              {type.is_active ? 'Deactivate' : 'Activate'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => deletePolicyType(type.id)}
+                              className="h-8 px-2 text-red-600"
+                              title="Delete policy type"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </TableCell>
                   )}
                 </TableRow>
