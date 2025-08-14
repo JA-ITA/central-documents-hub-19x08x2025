@@ -630,6 +630,7 @@ const DocumentEditDialog = ({ policy, onUpdate, isOpen, onOpenChange }) => {
 // Dashboard Component
 const Dashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [policies, setPolicies] = useState([]);
   const [categories, setCategories] = useState([]);
   const [users, setUsers] = useState([]);
@@ -640,6 +641,8 @@ const Dashboard = () => {
   const [showHidden, setShowHidden] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
   const [showDeletedPolicyTypes, setShowDeletedPolicyTypes] = useState(false);
+  const [editingPolicy, setEditingPolicy] = useState(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchPolicies();
