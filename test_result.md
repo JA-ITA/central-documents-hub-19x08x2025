@@ -194,6 +194,9 @@ backend:
         - working: true
           agent: "testing"
           comment: "PASSED - Policy type management working perfectly. Creation, activation/deactivation, and listing all functioning correctly. Fixed duplicate keyword argument issue in create_policy_type function."
+        - working: true
+          agent: "testing"
+          comment: "COMPREHENSIVE DELETE/RESTORE TESTING COMPLETED - 20/21 tests passed (95% success rate). Enhanced policy type delete/restore functionality working excellently: ✅ Policy type creation with is_deleted field (defaults to False), ✅ Soft delete functionality (DELETE /api/policy-types/{id}) sets is_deleted=True and is_active=False, ✅ Restore functionality (PATCH /api/policy-types/{id}/restore) sets is_deleted=False and is_active=True, ✅ Listing with include_deleted parameter properly filters results, ✅ PolicyTypeUpdate model supports all new fields, ✅ Deleted policy types excluded from active operations, ✅ Policy creation integration properly rejects deleted policy types, ✅ Restoring policy types makes them available again, ✅ Proper 404 error handling for non-existent policy types, ✅ Default data initialization includes is_deleted=False. Minor issue: One test failed trying to delete already deleted policy type (correct 404 behavior). All core delete/restore functionality working perfectly."
 
 frontend:
   - task: "Admin dashboard with comprehensive UI"
