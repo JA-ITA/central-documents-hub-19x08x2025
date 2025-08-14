@@ -5,7 +5,7 @@ from datetime import datetime
 import time
 
 class PolicyTypeDeleteRestoreTester:
-    def __init__(self, base_url="https://user-management-7.preview.emergentagent.com"):
+    def __init__(self, base_url="https://secure-doc-viewer.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.token = None
