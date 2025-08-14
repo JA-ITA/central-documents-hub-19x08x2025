@@ -231,15 +231,18 @@ frontend:
 
   - task: "Policy management interface"
     implemented: true
-    working: "NA"
+    working: true
     file: "App.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Policy list with visibility toggle, delete/restore actions, search and filtering"
+        - working: true
+          agent: "testing"
+          comment: "PASSED - Policy management interface working perfectly. Policy table displays all required columns (Policy Number, Title, Category, Type, Version, Status, Visibility, Actions). Search functionality present, category and status filters working. Found comprehensive action buttons per policy: View, Edit (admin), Download, visibility toggle, delete/restore. Admin controls for showing hidden and deleted policies functional."
 
   - task: "User management interface"
     implemented: true
