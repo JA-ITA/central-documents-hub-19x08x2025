@@ -305,7 +305,7 @@ const Dashboard = () => {
     if (user.role === 'admin') {
       fetchUsers();
     }
-  }, [user, showHidden, showDeleted]);
+  }, [user, showHidden, showDeleted, showDeletedPolicyTypes]);
 
   const fetchPolicies = async () => {
     try {
