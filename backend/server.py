@@ -354,7 +354,10 @@ async def create_policy_type(policy_type_data: PolicyTypeCreate, current_user: U
     if existing_type:
         raise HTTPException(status_code=400, detail="Policy type code already exists")
     
-    policy_type = PolicyType(**policy_type_data.dict(), code=policy_type_data.code.upper())
+    # Create policy type with uppercase code
+    policy_type_dict = policy_type_data.dict()
+    policy_type_dict["code"] = policy_type_data.code.upper()
+    policy_type = PolicyType(**policy_type_dict)
     await db.policy_types.insert_one(policy_type.dict())
     return policy_type
 
