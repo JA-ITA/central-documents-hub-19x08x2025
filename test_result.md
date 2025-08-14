@@ -276,15 +276,18 @@ frontend:
 
   - task: "Policy type management interface"
     implemented: true
-    working: "NA"
+    working: true
     file: "App.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Policy type creation and activation/deactivation interface"
+        - working: true
+          agent: "testing"
+          comment: "PASSED - Policy type management interface accessible via Policy Types tab. Tab navigation working correctly."
 
   - task: "Remove admin credentials from login page"
     implemented: true
