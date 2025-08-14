@@ -292,7 +292,7 @@ async def init_default_data():
     ]
     
     for type_data in default_types:
-        existing_type = await db.policy_types.find_one({"code": type_data["code"], "is_active": True})
+        existing_type = await db.policy_types.find_one({"code": type_data["code"], "is_deleted": False})
         if not existing_type:
             policy_type = PolicyType(**type_data)
             await db.policy_types.insert_one(policy_type.dict())
