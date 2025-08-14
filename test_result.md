@@ -306,15 +306,18 @@ frontend:
 
   - task: "PDF viewer with print functionality"
     implemented: true
-    working: "NA"
+    working: false
     file: "App.js"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Created dedicated PDF viewer page with react-pdf library. Features include: embedded PDF rendering, zoom controls, page navigation, print functionality, download option, responsive design. Added route /policy/:policyId for document viewing."
+        - working: false
+          agent: "testing"
+          comment: "FAILED - PDF viewer has CORS issues with PDF.js worker loading. Navigation to /policy/:policyId works correctly, PDF container found, print and download buttons present, but PDF rendering fails due to worker loading errors. Zoom and page navigation controls not properly accessible. Back navigation partially working. Issue: PDF.js worker cannot load from external CDNs due to CORS policy restrictions."
 
   - task: "Document editing interface for administrators"
     implemented: true
