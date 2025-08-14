@@ -278,6 +278,7 @@ async def login_user(user_data: UserLogin):
     
     user_data = user.copy()
     user_data.pop('password_hash')
+    user_data.pop('_id', None)  # Remove MongoDB ObjectId
     
     return {
         "access_token": access_token,
