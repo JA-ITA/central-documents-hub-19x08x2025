@@ -352,8 +352,8 @@ const Dashboard = () => {
   const filteredPolicies = policies.filter(policy => {
     const matchesSearch = policy.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          policy.policy_number.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = !selectedCategory || policy.category_id === selectedCategory;
-    const matchesStatus = !selectedStatus || policy.status === selectedStatus;
+    const matchesCategory = selectedCategory === 'all' || !selectedCategory || policy.category_id === selectedCategory;
+    const matchesStatus = selectedStatus === 'all' || !selectedStatus || policy.status === selectedStatus;
     
     return matchesSearch && matchesCategory && matchesStatus;
   });
