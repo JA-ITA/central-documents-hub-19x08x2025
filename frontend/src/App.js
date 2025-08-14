@@ -236,13 +236,7 @@ const Login = () => {
             </button>
           </div>
 
-          {isLogin && (
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-sm text-blue-800 font-medium">Default Admin Credentials:</p>
-              <p className="text-sm text-blue-700">Username: admin</p>
-              <p className="text-sm text-blue-700">Password: admin123</p>
-            </div>
-          )}
+
         </CardContent>
       </Card>
     </div>
