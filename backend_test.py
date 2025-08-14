@@ -34,7 +34,7 @@ class PolicyRegisterAPITester:
             "response_data": response_data
         })
 
-    def run_test(self, name, method, endpoint, expected_status, data=None, files=None):
+    def run_test(self, name, method, endpoint, expected_status, data=None, files=None, params=None):
         """Run a single API test"""
         url = f"{self.api_url}/{endpoint}"
         headers = {'Content-Type': 'application/json'}
@@ -50,14 +50,16 @@ class PolicyRegisterAPITester:
         
         try:
             if method == 'GET':
-                response = requests.get(url, headers=headers)
+                response = requests.get(url, headers=headers, params=params)
             elif method == 'POST':
                 if files:
                     response = requests.post(url, data=data, files=files, headers=headers)
                 else:
                     response = requests.post(url, json=data, headers=headers)
             elif method == 'PATCH':
-                response = requests.patch(url, json=data, headers=headers)
+                response = requests.patch(url, json=data, headers=headers, params=params)
+            elif method == 'DELETE':
+                response = requests.delete(url, headers=headers)
 
             success = response.status_code == expected_status
             response_data = None
