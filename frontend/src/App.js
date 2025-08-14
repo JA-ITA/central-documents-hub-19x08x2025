@@ -765,7 +765,7 @@ const Dashboard = () => {
             <TabsContent value="upload">
               <PolicyUploader 
                 categories={categories.filter(cat => !cat.is_deleted)} 
-                policyTypes={policyTypes.filter(pt => pt.is_active)}
+                policyTypes={policyTypes.filter(pt => pt.is_active && !pt.is_deleted)}
                 onUpload={fetchPolicies} 
               />
             </TabsContent>
