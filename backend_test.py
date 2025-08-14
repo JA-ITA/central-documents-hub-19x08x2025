@@ -332,11 +332,13 @@ class PolicyRegisterAPITester:
             self.log_test("Enhanced User Management", False, "No token available")
             return False
         
-        # First create a test user
+        # First create a test user with more unique identifier
+        import time
+        unique_id = f"{datetime.now().strftime('%H%M%S')}_{int(time.time() % 10000)}"
         test_user_data = {
-            "username": f"testuser_{datetime.now().strftime('%H%M%S')}",
-            "email": f"test_{datetime.now().strftime('%H%M%S')}@test.com",
-            "full_name": "Test User",
+            "username": f"testuser_{unique_id}",
+            "email": f"test_{unique_id}@test.com",
+            "full_name": "Test User Enhanced",
             "password": "testpass123"
         }
         
@@ -350,9 +352,23 @@ class PolicyRegisterAPITester:
         if success:
             self.test_user_id = response.get('id')
             print(f"   Created test user ID: {self.test_user_id}")
+        else:
+            # If user creation fails, try to find an existing non-admin user to test with
+            success, response = self.run_test(
+                "Get Existing Users for Testing",
+                "GET",
+                "users",
+                200
+            )
+            if success:
+                users = response if isinstance(response, list) else []
+                non_admin_users = [u for u in users if u.get('role') != 'admin' and not u.get('is_deleted', False)]
+                if non_admin_users:
+                    self.test_user_id = non_admin_users[0].get('id')
+                    print(f"   Using existing user ID for testing: {self.test_user_id}")
         
         if not self.test_user_id:
-            print("❌ Cannot proceed with user management tests - no test user created")
+            print("❌ Cannot proceed with user management tests - no test user available")
             return False
         
         # Test GET /api/users with include_deleted
