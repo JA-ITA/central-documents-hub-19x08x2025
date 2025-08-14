@@ -266,6 +266,323 @@ class PolicyRegisterAPITester:
         
         return success
 
+    def test_policy_types_management(self):
+        """Test Policy Types Management (New Feature)"""
+        print("\n=== POLICY TYPES MANAGEMENT TESTS ===")
+        
+        if not self.token:
+            self.log_test("Policy Types Management", False, "No token available")
+            return False
+        
+        # Test GET /api/policy-types (should return default types)
+        success, response = self.run_test(
+            "Get Default Policy Types",
+            "GET",
+            "policy-types",
+            200
+        )
+        if success:
+            policy_types = response if isinstance(response, list) else []
+            print(f"   Found {len(policy_types)} policy types")
+            for pt in policy_types:
+                print(f"   - {pt.get('name', 'unknown')} ({pt.get('code', 'unknown')}): {'Active' if pt.get('is_active') else 'Inactive'}")
+        
+        # Test POST /api/policy-types (admin only - create custom policy type)
+        custom_type_data = {
+            "name": "Test Custom Type",
+            "code": "TCT",
+            "description": "A test custom policy type"
+        }
+        success, response = self.run_test(
+            "Create Custom Policy Type",
+            "POST",
+            "policy-types",
+            200,
+            data=custom_type_data
+        )
+        if success:
+            self.test_policy_type_id = response.get('id')
+            print(f"   Created policy type ID: {self.test_policy_type_id}")
+        
+        # Test PATCH /api/policy-types/{id} (admin only - activate/deactivate)
+        if self.test_policy_type_id:
+            success, response = self.run_test(
+                "Deactivate Policy Type",
+                "PATCH",
+                f"policy-types/{self.test_policy_type_id}",
+                200,
+                params={"is_active": "false"}
+            )
+            
+            success, response = self.run_test(
+                "Activate Policy Type",
+                "PATCH",
+                f"policy-types/{self.test_policy_type_id}",
+                200,
+                params={"is_active": "true"}
+            )
+        
+        return True
+
+    def test_enhanced_user_management(self):
+        """Test Enhanced User Management"""
+        print("\n=== ENHANCED USER MANAGEMENT TESTS ===")
+        
+        if not self.token:
+            self.log_test("Enhanced User Management", False, "No token available")
+            return False
+        
+        # First create a test user
+        test_user_data = {
+            "username": f"testuser_{datetime.now().strftime('%H%M%S')}",
+            "email": f"test_{datetime.now().strftime('%H%M%S')}@test.com",
+            "full_name": "Test User",
+            "password": "testpass123"
+        }
+        
+        success, response = self.run_test(
+            "Create Test User for Management",
+            "POST",
+            "auth/register",
+            200,
+            data=test_user_data
+        )
+        if success:
+            self.test_user_id = response.get('id')
+            print(f"   Created test user ID: {self.test_user_id}")
+        
+        if not self.test_user_id:
+            print("❌ Cannot proceed with user management tests - no test user created")
+            return False
+        
+        # Test GET /api/users with include_deleted
+        success, response = self.run_test(
+            "Get Users Including Deleted",
+            "GET",
+            "users",
+            200,
+            params={"include_deleted": "true"}
+        )
+        if success:
+            users = response if isinstance(response, list) else []
+            deleted_users = [u for u in users if u.get('is_deleted', False)]
+            print(f"   Found {len(users)} total users, {len(deleted_users)} deleted")
+        
+        # Test PATCH /api/users/{id}/approve (approve the test user)
+        success, response = self.run_test(
+            "Approve Test User",
+            "PATCH",
+            f"users/{self.test_user_id}/approve",
+            200
+        )
+        
+        # Test PATCH /api/users/{id}/role (admin only - change user role)
+        success, response = self.run_test(
+            "Change User Role to Policy Manager",
+            "PATCH",
+            f"users/{self.test_user_id}/role",
+            200,
+            params={"role": "policy_manager"}
+        )
+        
+        # Test PATCH /api/users/{id} (admin only - bulk user updates)
+        update_data = {
+            "is_active": True,
+            "is_approved": True
+        }
+        success, response = self.run_test(
+            "Bulk Update User",
+            "PATCH",
+            f"users/{self.test_user_id}",
+            200,
+            data=update_data
+        )
+        
+        # Test PATCH /api/users/{id}/suspend (admin only - suspend user)
+        success, response = self.run_test(
+            "Suspend User",
+            "PATCH",
+            f"users/{self.test_user_id}/suspend",
+            200
+        )
+        
+        # Test PATCH /api/users/{id}/restore (admin only - restore user)
+        success, response = self.run_test(
+            "Restore User",
+            "PATCH",
+            f"users/{self.test_user_id}/restore",
+            200
+        )
+        
+        # Test DELETE /api/users/{id} (admin only - soft delete user)
+        success, response = self.run_test(
+            "Soft Delete User",
+            "DELETE",
+            f"users/{self.test_user_id}",
+            200
+        )
+        
+        return True
+
+    def test_enhanced_category_management(self):
+        """Test Enhanced Category Management"""
+        print("\n=== ENHANCED CATEGORY MANAGEMENT TESTS ===")
+        
+        if not self.token:
+            self.log_test("Enhanced Category Management", False, "No token available")
+            return False
+        
+        # First create a test category
+        test_category_data = {
+            "name": "Test Category Enhanced",
+            "code": "TCE",
+            "description": "A test category for enhanced testing"
+        }
+        
+        success, response = self.run_test(
+            "Create Test Category for Enhancement",
+            "POST",
+            "categories",
+            200,
+            data=test_category_data
+        )
+        if success:
+            self.test_category_id = response.get('id')
+            print(f"   Created test category ID: {self.test_category_id}")
+        
+        if not self.test_category_id:
+            print("❌ Cannot proceed with category management tests - no test category created")
+            return False
+        
+        # Test GET /api/categories with include_deleted
+        success, response = self.run_test(
+            "Get Categories Including Deleted",
+            "GET",
+            "categories",
+            200,
+            params={"include_deleted": "true"}
+        )
+        if success:
+            categories = response if isinstance(response, list) else []
+            deleted_categories = [c for c in categories if c.get('is_deleted', False)]
+            print(f"   Found {len(categories)} total categories, {len(deleted_categories)} deleted")
+        
+        # Test PATCH /api/categories/{id} (admin only - update category)
+        update_data = {
+            "description": "Updated test category description for enhanced testing"
+        }
+        success, response = self.run_test(
+            "Update Category",
+            "PATCH",
+            f"categories/{self.test_category_id}",
+            200,
+            data=update_data
+        )
+        
+        # Test DELETE /api/categories/{id} (admin only - soft delete)
+        success, response = self.run_test(
+            "Soft Delete Category",
+            "DELETE",
+            f"categories/{self.test_category_id}",
+            200
+        )
+        
+        # Test PATCH /api/categories/{id}/restore (admin only - restore category)
+        success, response = self.run_test(
+            "Restore Category",
+            "PATCH",
+            f"categories/{self.test_category_id}/restore",
+            200
+        )
+        
+        return True
+
+    def test_enhanced_policy_management(self):
+        """Test Enhanced Policy Management"""
+        print("\n=== ENHANCED POLICY MANAGEMENT TESTS ===")
+        
+        if not self.token:
+            self.log_test("Enhanced Policy Management", False, "No token available")
+            return False
+        
+        # Get existing policies first
+        success, response = self.run_test(
+            "Get All Policies for Enhancement Testing",
+            "GET",
+            "policies",
+            200
+        )
+        
+        existing_policies = response if success and isinstance(response, list) else []
+        if existing_policies:
+            # Use the first policy for testing
+            test_policy = existing_policies[0]
+            self.test_policy_id = test_policy.get('id')
+            print(f"   Using existing policy ID: {self.test_policy_id}")
+            
+            # Test PATCH /api/policies/{id}/visibility (admin only - hide/show from users)
+            success, response = self.run_test(
+                "Hide Policy from Users",
+                "PATCH",
+                f"policies/{self.test_policy_id}/visibility",
+                200,
+                params={"is_visible": "false"}
+            )
+            
+            success, response = self.run_test(
+                "Show Policy to Users",
+                "PATCH",
+                f"policies/{self.test_policy_id}/visibility",
+                200,
+                params={"is_visible": "true"}
+            )
+            
+            # Test GET /api/policies with include_hidden
+            success, response = self.run_test(
+                "Get Policies Including Hidden",
+                "GET",
+                "policies",
+                200,
+                params={"include_hidden": "true"}
+            )
+            if success:
+                policies = response if isinstance(response, list) else []
+                hidden_policies = [p for p in policies if not p.get('is_visible_to_users', True)]
+                print(f"   Found {len(policies)} total policies, {len(hidden_policies)} hidden")
+            
+            # Test DELETE /api/policies/{id} (admin only - soft delete)
+            success, response = self.run_test(
+                "Soft Delete Policy",
+                "DELETE",
+                f"policies/{self.test_policy_id}",
+                200
+            )
+            
+            # Test GET /api/policies with include_deleted
+            success, response = self.run_test(
+                "Get Policies Including Deleted",
+                "GET",
+                "policies",
+                200,
+                params={"include_deleted": "true"}
+            )
+            if success:
+                policies = response if isinstance(response, list) else []
+                deleted_policies = [p for p in policies if p.get('status') == 'deleted']
+                print(f"   Found {len(policies)} total policies, {len(deleted_policies)} deleted")
+            
+            # Test PATCH /api/policies/{id}/restore (admin only - restore deleted)
+            success, response = self.run_test(
+                "Restore Policy",
+                "PATCH",
+                f"policies/{self.test_policy_id}/restore",
+                200
+            )
+        else:
+            print("⚠️  No existing policies found - skipping policy management tests")
+        
+        return True
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🚀 Starting Central Policy Register Backend API Tests")
