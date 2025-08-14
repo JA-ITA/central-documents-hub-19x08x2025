@@ -342,11 +342,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Document editing and replacement functionality"
     - "PDF viewer with print functionality"
-    - "Document editing interface for administrators"
-    - "Remove admin credentials from login page"
-  stuck_tasks: []
+  stuck_tasks:
+    - "PDF viewer with print functionality"
   test_all: false
   test_priority: "high_first"
 
