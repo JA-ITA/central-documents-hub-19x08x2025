@@ -70,6 +70,13 @@ class PolicyTypeCreate(BaseModel):
     code: str
     description: Optional[str] = ""
 
+class PolicyTypeUpdate(BaseModel):
+    name: Optional[str] = None
+    code: Optional[str] = None
+    description: Optional[str] = None
+    is_active: Optional[bool] = None
+    is_deleted: Optional[bool] = None
+
 # Models
 class User(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
