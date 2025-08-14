@@ -356,3 +356,53 @@ body {
     font-size: 0.75rem;
   }
 }
+
+/* PDF Viewer Styles */
+.pdf-container {
+  min-height: 600px;
+}
+
+.pdf-document {
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.pdf-page canvas {
+  max-width: 100% !important;
+  height: auto !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Print styles */
+@media print {
+  .print\:hidden {
+    display: none !important;
+  }
+  
+  .pdf-container {
+    background: white !important;
+    padding: 0 !important;
+  }
+  
+  .pdf-page canvas {
+    box-shadow: none !important;
+    page-break-inside: avoid;
+  }
+  
+  /* Hide browser UI elements during print */
+  body * {
+    visibility: hidden;
+  }
+  
+  .pdf-container,
+  .pdf-container * {
+    visibility: visible;
+  }
+  
+  .pdf-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+  }
+}
