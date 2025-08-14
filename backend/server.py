@@ -235,7 +235,7 @@ async def generate_policy_number(category_id: str, policy_type_id: str, year: in
         raise HTTPException(status_code=404, detail="Category not found")
     
     # Get policy type
-    policy_type = await db.policy_types.find_one({"id": policy_type_id, "is_active": True})
+    policy_type = await db.policy_types.find_one({"id": policy_type_id, "is_active": True, "is_deleted": False})
     if not policy_type:
         raise HTTPException(status_code=404, detail="Policy type not found")
     
