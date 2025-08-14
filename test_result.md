@@ -180,7 +180,7 @@ backend:
           agent: "testing"
           comment: "PASSED - All user management features working excellently. User registration, admin approval, role changes (admin/policy_manager/user), suspension, soft deletion, and restoration all functioning correctly."
 
-  - task: "Policy type creation and management"
+  - task: "Policy type creation and management with delete/restore"
     implemented: true
     working: true
     file: "server.py"
