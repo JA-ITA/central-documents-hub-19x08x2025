@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Test the enhanced system to ensure all the new features work properly fix all issues, the system should be able to : Allow administrator to be able to remove from user view uploaded documents, allow administrator to be able to delete and restore uploaded documents. Allow administrator to delete, edit or restore policy categories, allow administrator to be able to suspend, delete and restore users account. Have the administrator have the ability to change user role. Allow administrator to create new policy type"
+user_problem_statement: "allow administrator to edit uploaded documents, in Policy Management when documents are selected for viewing, display as PDF on a separate page with the option to print, remove admin username and password from log in page"
 
 backend:
   - task: "User authentication and authorization"
@@ -198,6 +198,18 @@ backend:
           agent: "testing"
           comment: "COMPREHENSIVE DELETE/RESTORE TESTING COMPLETED - 20/21 tests passed (95% success rate). Enhanced policy type delete/restore functionality working excellently: ✅ Policy type creation with is_deleted field (defaults to False), ✅ Soft delete functionality (DELETE /api/policy-types/{id}) sets is_deleted=True and is_active=False, ✅ Restore functionality (PATCH /api/policy-types/{id}/restore) sets is_deleted=False and is_active=True, ✅ Listing with include_deleted parameter properly filters results, ✅ PolicyTypeUpdate model supports all new fields, ✅ Deleted policy types excluded from active operations, ✅ Policy creation integration properly rejects deleted policy types, ✅ Restoring policy types makes them available again, ✅ Proper 404 error handling for non-existent policy types, ✅ Default data initialization includes is_deleted=False. Minor issue: One test failed trying to delete already deleted policy type (correct 404 behavior). All core delete/restore functionality working perfectly."
 
+  - task: "Document editing and replacement functionality"
+    implemented: true
+    working: "NA"
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Added PATCH /api/policies/{policy_id}/document endpoint for document replacement. Supports file upload, version increment, change summary, and maintains version history. Validates file types (PDF/DOCX) and updates policy with new document info."
+
 frontend:
   - task: "Admin dashboard with comprehensive UI"
     implemented: true
@@ -258,6 +270,42 @@ frontend:
         - working: "NA"
           agent: "main"
           comment: "Policy type creation and activation/deactivation interface"
+
+  - task: "Remove admin credentials from login page"
+    implemented: true
+    working: "NA"
+    file: "App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Removed the blue box displaying admin username and password from login page for security"
+
+  - task: "PDF viewer with print functionality"
+    implemented: true
+    working: "NA"
+    file: "App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Created dedicated PDF viewer page with react-pdf library. Features include: embedded PDF rendering, zoom controls, page navigation, print functionality, download option, responsive design. Added route /policy/:policyId for document viewing."
+
+  - task: "Document editing interface for administrators"
+    implemented: true
+    working: "NA"
+    file: "App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Added DocumentEditDialog component with file upload, validation (PDF/DOCX), change summary input, and error handling. Admin users can edit documents via Edit button in policy management table. Updated view button to navigate to dedicated PDF viewer instead of opening in new tab."
 
 metadata:
   created_by: "main_agent"
