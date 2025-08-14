@@ -383,7 +383,11 @@ async def get_policies(
         query["category_id"] = category_id
     
     policies = await db.policies.find(query).to_list(None)
-    return [Policy(**policy) for policy in policies]
+    result = []
+    for policy in policies:
+        policy.pop('_id', None)  # Remove MongoDB ObjectId
+        result.append(Policy(**policy))
+    return result
 
 @api_router.get("/policies/{policy_id}", response_model=Policy)
 async def get_policy(policy_id: str, current_user: User = Depends(get_current_user)):
