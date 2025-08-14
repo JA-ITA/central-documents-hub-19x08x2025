@@ -358,7 +358,7 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
 @api_router.post("/policy-types", response_model=PolicyType)
 async def create_policy_type(policy_type_data: PolicyTypeCreate, current_user: User = Depends(require_admin)):
     # Check if code already exists
-    existing_type = await db.policy_types.find_one({"code": policy_type_data.code.upper(), "is_active": True})
+    existing_type = await db.policy_types.find_one({"code": policy_type_data.code.upper(), "is_deleted": False})
     if existing_type:
         raise HTTPException(status_code=400, detail="Policy type code already exists")
     
@@ -370,8 +370,16 @@ async def create_policy_type(policy_type_data: PolicyTypeCreate, current_user: U
     return policy_type
 
 @api_router.get("/policy-types", response_model=List[PolicyType])
-async def get_policy_types(include_inactive: bool = False, current_user: User = Depends(get_current_user)):
-    query = {"is_active": True} if not include_inactive else {}
+async def get_policy_types(include_inactive: bool = False, include_deleted: bool = False, current_user: User = Depends(get_current_user)):
+    query = {}
+    if current_user.role == 'admin' and include_deleted:
+        # Admin can see deleted policy types
+        pass
+    else:
+        query["is_deleted"] = False
+        if not include_inactive:
+            query["is_active"] = True
+    
     policy_types = await db.policy_types.find(query).to_list(None)
     result = []
     for pt in policy_types:
@@ -380,14 +388,36 @@ async def get_policy_types(include_inactive: bool = False, current_user: User = 
     return result
 
 @api_router.patch("/policy-types/{type_id}")
-async def update_policy_type(type_id: str, is_active: bool, current_user: User = Depends(require_admin)):
+async def update_policy_type(type_id: str, update_data: PolicyTypeUpdate, current_user: User = Depends(require_admin)):
+    update_dict = {k: v for k, v in update_data.dict().items() if v is not None}
+    if update_dict:
+        result = await db.policy_types.update_one(
+            {"id": type_id},
+            {"$set": update_dict}
+        )
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="Policy type not found")
+    return {"message": "Policy type updated successfully"}
+
+@api_router.delete("/policy-types/{type_id}")
+async def delete_policy_type(type_id: str, current_user: User = Depends(require_admin)):
     result = await db.policy_types.update_one(
         {"id": type_id},
-        {"$set": {"is_active": is_active}}
+        {"$set": {"is_deleted": True, "is_active": False}}
     )
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="Policy type not found")
-    return {"message": "Policy type updated successfully"}
+    return {"message": "Policy type deleted successfully"}
+
+@api_router.patch("/policy-types/{type_id}/restore")
+async def restore_policy_type(type_id: str, current_user: User = Depends(require_admin)):
+    result = await db.policy_types.update_one(
+        {"id": type_id},
+        {"$set": {"is_deleted": False, "is_active": True}}
+    )
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Policy type not found")
+    return {"message": "Policy type restored successfully"}
 
 # Category Routes
 @api_router.post("/categories", response_model=Category)
