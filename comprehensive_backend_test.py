@@ -6,7 +6,7 @@ from datetime import datetime
 import io
 
 class ComprehensivePolicyRegisterTester:
-    def __init__(self, base_url="https://secure-doc-viewer.preview.emergentagent.com"):
+    def __init__(self, base_url="https://doc-hub-public.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.token = None
