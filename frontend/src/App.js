@@ -1845,9 +1845,17 @@ function App() {
     <BrowserRouter>
       <div className="App">
         <Routes>
-          <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
-          <Route path="/" element={user ? <Dashboard /> : <Navigate to="/login" />} />
-          <Route path="/policy/:policyId" element={user ? <PDFViewer /> : <Navigate to="/login" />} />
+          {/* Public Routes - No Authentication Required */}
+          <Route path="/" element={<PublicPolicyList />} />
+          <Route path="/document/:policyId" element={<PublicPDFViewer />} />
+          
+          {/* Admin Routes */}
+          <Route path="/admin-login" element={!user ? <AdminLogin /> : <Navigate to="/admin" />} />
+          <Route path="/admin" element={user ? <Dashboard /> : <Navigate to="/admin-login" />} />
+          <Route path="/admin/policy/:policyId" element={user ? <PDFViewer /> : <Navigate to="/admin-login" />} />
+          
+          {/* Legacy login route - redirect to admin login */}
+          <Route path="/login" element={<Navigate to="/admin-login" />} />
         </Routes>
       </div>
     </BrowserRouter>
