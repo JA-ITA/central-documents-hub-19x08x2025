@@ -479,6 +479,98 @@ async def restore_category(category_id: str, current_user: User = Depends(requir
         raise HTTPException(status_code=404, detail="Category not found")
     return {"message": "Category restored successfully"}
 
+# Public Routes (No Authentication Required)
+@api_router.get("/public/policies", response_model=List[Policy])
+async def get_public_policies(
+    status: Optional[PolicyStatus] = None,
+    category_id: Optional[str] = None,
+    search: Optional[str] = None
+):
+    """Public endpoint to get all policies visible to users"""
+    query = {
+        "status": {"$in": ["active", "archived"]},
+        "is_visible_to_users": True
+    }
+    
+    if status and status in ["active", "archived"]:
+        query["status"] = status
+    if category_id:
+        query["category_id"] = category_id
+    if search:
+        query["$or"] = [
+            {"title": {"$regex": search, "$options": "i"}},
+            {"policy_number": {"$regex": search, "$options": "i"}},
+            {"owner_department": {"$regex": search, "$options": "i"}}
+        ]
+    
+    policies = await db.policies.find(query).to_list(None)
+    result = []
+    for policy in policies:
+        policy.pop('_id', None)  # Remove MongoDB ObjectId
+        result.append(Policy(**policy))
+    return result
+
+@api_router.get("/public/policies/{policy_id}", response_model=Policy)
+async def get_public_policy(policy_id: str):
+    """Public endpoint to get a specific policy if it's visible to users"""
+    policy = await db.policies.find_one({
+        "id": policy_id,
+        "status": {"$in": ["active", "archived"]},
+        "is_visible_to_users": True
+    })
+    if not policy:
+        raise HTTPException(status_code=404, detail="Policy not found")
+    
+    policy.pop('_id', None)  # Remove MongoDB ObjectId
+    return Policy(**policy)
+
+@api_router.get("/public/policies/{policy_id}/download")
+async def download_public_policy(policy_id: str):
+    """Public endpoint to download a policy document if it's visible to users"""
+    policy = await db.policies.find_one({
+        "id": policy_id,
+        "status": {"$in": ["active", "archived"]},
+        "is_visible_to_users": True
+    })
+    if not policy:
+        raise HTTPException(status_code=404, detail="Policy not found")
+    
+    file_path = UPLOAD_DIR / policy["file_url"].split("/")[-1]
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    return FileResponse(
+        path=str(file_path),
+        filename=policy["file_name"],
+        media_type='application/octet-stream'
+    )
+
+@api_router.get("/public/categories", response_model=List[Category])
+async def get_public_categories():
+    """Public endpoint to get all active categories"""
+    categories = await db.categories.find({
+        "is_deleted": False, 
+        "is_active": True
+    }).to_list(None)
+    result = []
+    for cat in categories:
+        cat.pop('_id', None)  # Remove MongoDB ObjectId
+        result.append(Category(**cat))
+    return result
+
+@api_router.get("/public/policy-types", response_model=List[PolicyType])
+async def get_public_policy_types():
+    """Public endpoint to get all active policy types"""
+    policy_types = await db.policy_types.find({
+        "is_deleted": False,
+        "is_active": True
+    }).to_list(None)
+    result = []
+    for pt in policy_types:
+        pt.pop('_id', None)
+        result.append(PolicyType(**pt))
+    return result
+
 # Policy Routes
 @api_router.post("/policies")
 async def create_policy(
