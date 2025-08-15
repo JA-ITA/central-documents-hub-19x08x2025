@@ -198,7 +198,7 @@ backend:
           agent: "testing"
           comment: "COMPREHENSIVE DELETE/RESTORE TESTING COMPLETED - 20/21 tests passed (95% success rate). Enhanced policy type delete/restore functionality working excellently: ✅ Policy type creation with is_deleted field (defaults to False), ✅ Soft delete functionality (DELETE /api/policy-types/{id}) sets is_deleted=True and is_active=False, ✅ Restore functionality (PATCH /api/policy-types/{id}/restore) sets is_deleted=False and is_active=True, ✅ Listing with include_deleted parameter properly filters results, ✅ PolicyTypeUpdate model supports all new fields, ✅ Deleted policy types excluded from active operations, ✅ Policy creation integration properly rejects deleted policy types, ✅ Restoring policy types makes them available again, ✅ Proper 404 error handling for non-existent policy types, ✅ Default data initialization includes is_deleted=False. Minor issue: One test failed trying to delete already deleted policy type (correct 404 behavior). All core delete/restore functionality working perfectly."
 
-  - task: "Document editing and replacement functionality"
+  - task: "Public API endpoints for document access"
     implemented: true
     working: true
     file: "server.py"
@@ -208,10 +208,40 @@ backend:
     status_history:
         - working: "NA"
           agent: "main"
-          comment: "Added PATCH /api/policies/{policy_id}/document endpoint for document replacement. Supports file upload, version increment, change summary, and maintains version history. Validates file types (PDF/DOCX) and updates policy with new document info."
+          comment: "Created public API endpoints: GET /api/public/policies, GET /api/public/policies/{id}, GET /api/public/policies/{id}/download, GET /api/public/categories, GET /api/public/policy-types. No authentication required for public access."
         - working: true
           agent: "testing"
-          comment: "COMPREHENSIVE DOCUMENT EDITING TESTING COMPLETED - 30/30 tests passed (100% success rate). All requested functionality working perfectly: ✅ Authentication & Authorization: Admin and policy_manager users can access endpoint, regular users properly denied (403), invalid tokens properly rejected (401). ✅ Document Upload & Replacement: Successful PDF and DOCX file replacement, invalid file types properly rejected (400), large file handling works correctly. ✅ Version Management: Version numbers increment correctly after replacement, version history maintained and updated with proper metadata (uploaded_by, change_summary, file_url). ✅ Policy Data Updates: Policy document info updated correctly (file_url, file_name, version), modified_by and modified_at fields set properly, policy ID and core data preserved. ✅ Error Handling: Non-existent policy ID returns 404, missing file upload returns 422 validation error, empty change summary uses default value. ✅ Regression Testing: All existing functionality remains working (get policies, authentication, file download, visibility toggle). The document editing feature is production-ready and fully integrated with existing system."
+          comment: "PASSED - All public API endpoints working excellently with 32/32 tests passed (100% success rate). Public access to visible documents, proper filtering by visibility and status, search functionality, category/type filtering all working perfectly. No authentication required as designed."
+
+  - task: "Public frontend interface for document browsing"
+    implemented: true
+    working: true
+    file: "App.js, PublicLayout.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Created PublicPolicyList component with document browsing, search, filtering, and download functionality. Updated routing to support public access at root path. Admin access moved to /admin-login and /admin routes."
+        - working: true
+          agent: "main"
+          comment: "Public interface working correctly - displays document repository with search/filter functionality, shows documents marked as visible to users, provides view and download buttons, includes Admin Login button for administrative access."
+
+  - task: "Public PDF viewer with local worker"
+    implemented: true
+    working: false
+    file: "PublicLayout.js"
+    stuck_count: 1
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Created PublicPDFViewer component and downloaded local PDF.js worker to fix CORS issues. Added zoom controls, print functionality, and download options."
+        - working: false
+          agent: "main"
+          comment: "PDF viewer loading but failing to display PDF content - test document is text file with PDF extension rather than actual PDF. Viewer interface elements (zoom, print, download, navigation) all present and functional. Need actual PDF document for testing."
 
   - task: "Public API endpoints for document repository"
     implemented: true
