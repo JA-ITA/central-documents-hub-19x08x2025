@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "allow administrator to edit uploaded documents, in Policy Management when documents are selected for viewing, display as PDF on a separate page with the option to print, remove admin username and password from log in page"
+user_problem_statement: "allow anyone to be able to view and download documents, a user name and password should only be needed when the sight needs to be administrated, and new files created and published. redesign this sight so that it can be published as a page of an existing intranet sight. then create a AI summary prompt that can be used to create a copy of this sight and its functionality so that it can be added as a part of another sight. create phases for the development of this"
 
 backend:
   - task: "User authentication and authorization"
