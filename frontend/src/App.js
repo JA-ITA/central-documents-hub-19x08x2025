@@ -848,7 +848,7 @@ const Dashboard = () => {
   };
 
   const handleViewPolicy = (policy) => {
-    navigate(`/policy/${policy.id}`);
+    navigate(`/admin/policy/${policy.id}`);
   };
 
   return (
