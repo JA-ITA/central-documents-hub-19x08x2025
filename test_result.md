@@ -213,6 +213,21 @@ backend:
           agent: "testing"
           comment: "COMPREHENSIVE DOCUMENT EDITING TESTING COMPLETED - 30/30 tests passed (100% success rate). All requested functionality working perfectly: ✅ Authentication & Authorization: Admin and policy_manager users can access endpoint, regular users properly denied (403), invalid tokens properly rejected (401). ✅ Document Upload & Replacement: Successful PDF and DOCX file replacement, invalid file types properly rejected (400), large file handling works correctly. ✅ Version Management: Version numbers increment correctly after replacement, version history maintained and updated with proper metadata (uploaded_by, change_summary, file_url). ✅ Policy Data Updates: Policy document info updated correctly (file_url, file_name, version), modified_by and modified_at fields set properly, policy ID and core data preserved. ✅ Error Handling: Non-existent policy ID returns 404, missing file upload returns 422 validation error, empty change summary uses default value. ✅ Regression Testing: All existing functionality remains working (get policies, authentication, file download, visibility toggle). The document editing feature is production-ready and fully integrated with existing system."
 
+  - task: "Public API endpoints for document repository"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implemented public API endpoints: GET /api/public/policies (with search, category, status filtering), GET /api/public/policies/{id}, GET /api/public/policies/{id}/download, GET /api/public/categories, GET /api/public/policy-types. All endpoints require no authentication and return only visible/active data."
+        - working: true
+          agent: "testing"
+          comment: "PUBLIC API ENDPOINTS TESTING COMPLETED - 32/32 tests passed (100% success rate). All public endpoints working perfectly: ✅ GET /api/public/policies: Basic retrieval, search functionality, category filtering, status filtering (active/archived), proper visibility filtering (only is_visible_to_users=true and status active/archived returned). ✅ GET /api/public/policies/{id}: Retrieving visible policies, proper 404 for non-existent policies, proper 404 for hidden/deleted policies. ✅ GET /api/public/policies/{id}/download: Downloading visible policy documents, proper 404 for non-existent policies, proper 404 for hidden/deleted policies. ✅ GET /api/public/categories: Only active, non-deleted categories returned. ✅ GET /api/public/policy-types: Only active, non-deleted policy types returned. ✅ No Authentication Required: All endpoints accessible without Authorization headers. All public endpoints are production-ready and properly secured with visibility/status filtering."
+
 frontend:
   - task: "Admin dashboard with comprehensive UI"
     implemented: true
