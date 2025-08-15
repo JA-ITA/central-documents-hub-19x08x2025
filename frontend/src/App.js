@@ -486,11 +486,20 @@ const Header = () => {
             <Shield className="h-8 w-8" />
             <div>
               <h1 className="text-xl font-bold">Central Policy Register</h1>
-              <p className="text-sm text-slate-300">Policy Management System</p>
+              <p className="text-sm text-slate-300">Administrative Panel</p>
             </div>
           </div>
           
           <div className="flex items-center space-x-4">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => window.open('/', '_blank')}
+              className="text-slate-300 hover:text-white"
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              View Public Site
+            </Button>
             <Badge variant="outline" className="bg-slate-700 text-white border-slate-600">
               {user?.role?.replace('_', ' ').toUpperCase()}
             </Badge>
