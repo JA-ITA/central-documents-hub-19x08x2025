@@ -765,7 +765,7 @@ const Dashboard = () => {
     if (window.confirm('Are you sure you want to delete this policy?')) {
       try {
         await axios.delete(`${API}/policies/${policyId}`);
-        fetchPolicies();
+        fetchDocuments();
       } catch (error) {
         console.error('Error deleting policy:', error);
       }
