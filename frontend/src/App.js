@@ -901,13 +901,15 @@ const Dashboard = () => {
     }
   };
 
-  const filteredPolicies = documents.filter(policy => {
-    const matchesSearch = policy.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         policy.policy_number.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || !selectedCategory || policy.category_id === selectedCategory;
-    const matchesStatus = selectedStatus === 'all' || !selectedStatus || policy.status === selectedStatus;
+  const filteredDocuments = documents.filter(doc => {  // Renamed from filteredPolicies
+    const matchesSearch = doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (doc.document_number && doc.document_number.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                         (doc.description && doc.description.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesCategory = selectedCategory === 'all' || !selectedCategory || doc.category_id === selectedCategory;
+    const matchesDocumentType = selectedDocumentType === 'all' || !selectedDocumentType || doc.document_type === selectedDocumentType;
+    const matchesStatus = selectedStatus === 'all' || !selectedStatus || doc.status === selectedStatus;
     
-    return matchesSearch && matchesCategory && matchesStatus;
+    return matchesSearch && matchesCategory && matchesDocumentType && matchesStatus;
   });
 
   const getCategoryName = (categoryId) => {
