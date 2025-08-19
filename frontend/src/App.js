@@ -646,16 +646,19 @@ const DocumentEditDialog = ({ policy, onUpdate, isOpen, onOpenChange }) => {
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [policies, setPolicies] = useState([]);
+  const [documents, setDocuments] = useState([]);  // Renamed from policies
   const [categories, setCategories] = useState([]);
   const [users, setUsers] = useState([]);
   const [policyTypes, setPolicyTypes] = useState([]);
+  const [userGroups, setUserGroups] = useState([]);  // New state for user groups
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedDocumentType, setSelectedDocumentType] = useState('all');  // New filter
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [showHidden, setShowHidden] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
   const [showDeletedPolicyTypes, setShowDeletedPolicyTypes] = useState(false);
+  const [showDeletedUserGroups, setShowDeletedUserGroups] = useState(false);  // New state
   const [editingPolicy, setEditingPolicy] = useState(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
