@@ -829,6 +829,57 @@ const Dashboard = () => {
     }
   };
 
+  // User Group management functions
+  const createUserGroup = async (groupData) => {
+    try {
+      await axios.post(`${API}/user-groups`, groupData);
+      fetchUserGroups();
+    } catch (error) {
+      console.error('Error creating user group:', error);
+      throw error;
+    }
+  };
+
+  const updateUserGroup = async (groupId, groupData) => {
+    try {
+      await axios.put(`${API}/user-groups/${groupId}`, groupData);
+      fetchUserGroups();
+    } catch (error) {
+      console.error('Error updating user group:', error);
+      throw error;
+    }
+  };
+
+  const deleteUserGroup = async (groupId) => {
+    if (window.confirm('Are you sure you want to delete this user group?')) {
+      try {
+        await axios.delete(`${API}/user-groups/${groupId}`);
+        fetchUserGroups();
+      } catch (error) {
+        console.error('Error deleting user group:', error);
+      }
+    }
+  };
+
+  const restoreUserGroup = async (groupId) => {
+    try {
+      await axios.patch(`${API}/user-groups/${groupId}/restore`);
+      fetchUserGroups();
+    } catch (error) {
+      console.error('Error restoring user group:', error);
+    }
+  };
+
+  const assignUserToGroups = async (userId, groupIds) => {
+    try {
+      await axios.patch(`${API}/users/${userId}/groups`, groupIds);
+      fetchUsers();
+    } catch (error) {
+      console.error('Error assigning user to groups:', error);
+      throw error;
+    }
+  };
+
   // Category management functions
   const deleteCategory = async (categoryId) => {
     if (window.confirm('Are you sure you want to delete this category?')) {
