@@ -356,7 +356,7 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
 
 # Policy Type Routes
 @api_router.post("/policy-types", response_model=PolicyType)
-async def create_policy_type(policy_type_data: PolicyTypeCreate, current_user: User = Depends(require_admin)):
+async def create_policy_type(policy_type_data: PolicyTypeCreate, current_user: User = Depends(require_admin_or_manager)):
     # Check if code already exists
     existing_type = await db.policy_types.find_one({"code": policy_type_data.code.upper(), "is_deleted": False})
     if existing_type:
