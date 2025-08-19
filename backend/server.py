@@ -365,6 +365,22 @@ async def init_default_data():
         await db.users.insert_one(admin_user.dict())
         print("Default admin user created: username=admin, password=admin123")
     
+    # Check if default user groups exist
+    default_groups = [
+        {"name": "HR Department", "code": "HR", "description": "Human Resources Department", "department": "Human Resources"},
+        {"name": "IT Department", "code": "IT", "description": "Information Technology Department", "department": "Information Technology"},
+        {"name": "Finance Department", "code": "FIN", "description": "Finance and Accounting Department", "department": "Finance"},
+        {"name": "Operations", "code": "OPS", "description": "Operations Department", "department": "Operations"},
+        {"name": "All Staff", "code": "ALL", "description": "All staff members", "department": "General"}
+    ]
+    
+    for group_data in default_groups:
+        existing_group = await db.user_groups.find_one({"code": group_data["code"], "is_deleted": False})
+        if not existing_group:
+            user_group = UserGroup(**group_data)
+            await db.user_groups.insert_one(user_group.dict())
+            print(f"Default user group created: {group_data['name']}")
+    
     # Check if default category exists
     ops_category = await db.categories.find_one({"code": "OPS", "is_deleted": False})
     if not ops_category:
