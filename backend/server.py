@@ -388,7 +388,7 @@ async def get_policy_types(include_inactive: bool = False, include_deleted: bool
     return result
 
 @api_router.patch("/policy-types/{type_id}")
-async def update_policy_type(type_id: str, update_data: PolicyTypeUpdate, current_user: User = Depends(require_admin)):
+async def update_policy_type(type_id: str, update_data: PolicyTypeUpdate, current_user: User = Depends(require_admin_or_manager)):
     update_dict = {k: v for k, v in update_data.dict().items() if v is not None}
     if update_dict:
         result = await db.policy_types.update_one(
