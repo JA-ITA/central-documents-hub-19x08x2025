@@ -203,7 +203,7 @@ class UserGroupsDocumentsAPITester:
                 "PUT",
                 f"user-groups/{test_group['id']}",
                 200,
-                json_data=update_data
+                data=update_data
             )
 
         # Test deleting and restoring user groups
