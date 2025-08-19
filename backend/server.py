@@ -642,8 +642,8 @@ async def get_policies(
 ):
     query = {}
     
-    # Admin can see all policies
-    if current_user.role == UserRole.ADMIN:
+    # Admin and Policy Manager can see all policies
+    if current_user.role in [UserRole.ADMIN, UserRole.POLICY_MANAGER]:
         if not include_deleted:
             query["status"] = {"$ne": "deleted"}
         if not include_hidden and not include_deleted:
