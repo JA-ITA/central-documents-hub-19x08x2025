@@ -448,7 +448,7 @@ async def get_categories(include_deleted: bool = False, current_user: User = Dep
     return result
 
 @api_router.patch("/categories/{category_id}")
-async def update_category(category_id: str, update_data: CategoryUpdate, current_user: User = Depends(require_admin)):
+async def update_category(category_id: str, update_data: CategoryUpdate, current_user: User = Depends(require_admin_or_manager)):
     update_dict = {k: v for k, v in update_data.dict().items() if v is not None}
     if update_dict:
         result = await db.categories.update_one(
