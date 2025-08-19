@@ -850,7 +850,7 @@ const Dashboard = () => {
     }
   };
 
-  const filteredPolicies = policies.filter(policy => {
+  const filteredPolicies = documents.filter(policy => {
     const matchesSearch = policy.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          policy.policy_number.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || !selectedCategory || policy.category_id === selectedCategory;
