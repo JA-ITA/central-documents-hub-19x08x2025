@@ -868,10 +868,10 @@ const Dashboard = () => {
       
       <main className="container mx-auto px-6 py-8">
         <Tabs defaultValue="policies" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="policies" className="flex items-center space-x-2">
               <FileText className="h-4 w-4" />
-              <span>Policies</span>
+              <span>Documents</span>
             </TabsTrigger>
             <TabsTrigger value="categories" className="flex items-center space-x-2">
               <FolderOpen className="h-4 w-4" />
@@ -879,8 +879,14 @@ const Dashboard = () => {
             </TabsTrigger>
             <TabsTrigger value="policy-types" className="flex items-center space-x-2">
               <Settings className="h-4 w-4" />
-              <span>Policy Types</span>
+              <span>Document Types</span>
             </TabsTrigger>
+            {user.role === 'admin' && (
+              <TabsTrigger value="user-groups" className="flex items-center space-x-2">
+                <Building2 className="h-4 w-4" />
+                <span>User Groups</span>
+              </TabsTrigger>
+            )}
             {user.role === 'admin' && (
               <TabsTrigger value="users" className="flex items-center space-x-2">
                 <Users className="h-4 w-4" />
@@ -890,7 +896,7 @@ const Dashboard = () => {
             {(user.role === 'admin' || user.role === 'policy_manager') && (
               <TabsTrigger value="upload" className="flex items-center space-x-2">
                 <Upload className="h-4 w-4" />
-                <span>Upload Policy</span>
+                <span>Upload Document</span>
               </TabsTrigger>
             )}
           </TabsList>
