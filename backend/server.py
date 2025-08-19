@@ -470,7 +470,7 @@ async def delete_category(category_id: str, current_user: User = Depends(require
     return {"message": "Category deleted successfully"}
 
 @api_router.patch("/categories/{category_id}/restore")
-async def restore_category(category_id: str, current_user: User = Depends(require_admin)):
+async def restore_category(category_id: str, current_user: User = Depends(require_admin_or_manager)):
     result = await db.categories.update_one(
         {"id": category_id},
         {"$set": {"is_deleted": False, "is_active": True}}
