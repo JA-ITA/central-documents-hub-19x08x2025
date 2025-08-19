@@ -138,6 +138,7 @@ class UserLogin(BaseModel):
 
 class UserUpdate(BaseModel):
     role: Optional[UserRole] = None
+    user_group_ids: Optional[List[str]] = None
     is_approved: Optional[bool] = None
     is_active: Optional[bool] = None
     is_suspended: Optional[bool] = None
