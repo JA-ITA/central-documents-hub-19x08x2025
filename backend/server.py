@@ -118,6 +118,7 @@ class User(BaseModel):
     email: str
     full_name: str
     role: UserRole = UserRole.USER
+    user_group_ids: List[str] = []  # User can belong to multiple groups
     is_approved: bool = False
     is_active: bool = True
     is_suspended: bool = False
