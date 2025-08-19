@@ -45,7 +45,9 @@ import {
   ZoomIn,
   ZoomOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Building2,
+  Tag
 } from 'lucide-react';
 import './App.css';
 
