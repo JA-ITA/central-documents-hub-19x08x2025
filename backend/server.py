@@ -435,7 +435,7 @@ async def create_category(category_data: CategoryCreate, current_user: User = De
 
 @api_router.get("/categories", response_model=List[Category])
 async def get_categories(include_deleted: bool = False, current_user: User = Depends(get_current_user)):
-    if current_user.role == UserRole.ADMIN and include_deleted:
+    if current_user.role in [UserRole.ADMIN, UserRole.POLICY_MANAGER] and include_deleted:
         query = {}
     else:
         query = {"is_deleted": False, "is_active": True}
