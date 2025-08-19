@@ -372,8 +372,8 @@ async def create_policy_type(policy_type_data: PolicyTypeCreate, current_user: U
 @api_router.get("/policy-types", response_model=List[PolicyType])
 async def get_policy_types(include_inactive: bool = False, include_deleted: bool = False, current_user: User = Depends(get_current_user)):
     query = {}
-    if current_user.role == 'admin' and include_deleted:
-        # Admin can see deleted policy types
+    if current_user.role in [UserRole.ADMIN, UserRole.POLICY_MANAGER] and include_deleted:
+        # Admin and Policy Manager can see deleted policy types
         pass
     else:
         query["is_deleted"] = False
