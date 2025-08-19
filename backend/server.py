@@ -173,6 +173,62 @@ class CategoryUpdate(BaseModel):
     is_active: Optional[bool] = None
     is_deleted: Optional[bool] = None
 
+class DocumentVersion(BaseModel):
+    version_number: int
+    upload_date: datetime
+    uploaded_by: str
+    change_summary: Optional[str] = ""
+    file_url: str
+    file_name: str
+
+# Enhanced Document model (more general than Policy)
+class Document(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    document_number: str
+    title: str
+    document_type: DocumentType = DocumentType.DOCUMENT
+    category_id: str
+    policy_type_id: Optional[str] = None  # Only for policies
+    date_issued: datetime
+    version: int = 1
+    status: PolicyStatus = PolicyStatus.ACTIVE
+    owner_department: str
+    file_url: str
+    file_name: str
+    is_visible_to_users: bool = True  # Public visibility (no login required)
+    visible_to_groups: List[str] = []  # Group-specific visibility (requires login)
+    version_history: List[DocumentVersion] = []
+    created_by: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    modified_by: Optional[str] = None
+    modified_at: Optional[datetime] = None
+    description: Optional[str] = ""
+    tags: List[str] = []
+
+class DocumentCreate(BaseModel):
+    title: str
+    document_type: DocumentType = DocumentType.DOCUMENT
+    category_id: str
+    policy_type_id: Optional[str] = None
+    date_issued: datetime
+    owner_department: str
+    document_number: Optional[str] = None
+    description: Optional[str] = ""
+    tags: Optional[List[str]] = []
+
+class DocumentUpdate(BaseModel):
+    title: Optional[str] = None
+    document_type: Optional[DocumentType] = None
+    category_id: Optional[str] = None
+    policy_type_id: Optional[str] = None
+    date_issued: Optional[datetime] = None
+    owner_department: Optional[str] = None
+    status: Optional[PolicyStatus] = None
+    is_visible_to_users: Optional[bool] = None
+    visible_to_groups: Optional[List[str]] = None
+    description: Optional[str] = None
+    tags: Optional[List[str]] = None
+
 class PolicyVersion(BaseModel):
     version_number: int
     upload_date: datetime
