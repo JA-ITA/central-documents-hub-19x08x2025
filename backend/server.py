@@ -56,6 +56,40 @@ class PolicyStatus(str, Enum):
     HIDDEN = "hidden"  # Hidden from regular users
     DELETED = "deleted"  # Soft deleted
 
+# New Enums for Documents
+class DocumentType(str, Enum):
+    POLICY = "policy"
+    MEMO = "memo"
+    DOCUMENT = "document"
+    PROCEDURE = "procedure"
+    GUIDELINE = "guideline"
+    NOTICE = "notice"
+
+# User Group Models
+class UserGroup(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    code: str
+    description: Optional[str] = ""
+    department: Optional[str] = None
+    is_active: bool = True
+    is_deleted: bool = False
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class UserGroupCreate(BaseModel):
+    name: str
+    code: str
+    description: Optional[str] = ""
+    department: Optional[str] = None
+
+class UserGroupUpdate(BaseModel):
+    name: Optional[str] = None
+    code: Optional[str] = None
+    description: Optional[str] = None
+    department: Optional[str] = None
+    is_active: Optional[bool] = None
+    is_deleted: Optional[bool] = None
+
 class PolicyType(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
