@@ -11,6 +11,9 @@ import { ArrowLeft, CheckCircle, XCircle, Shield } from 'lucide-react';
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
+// Create AuthContext that matches App.js
+export const AuthContext = React.createContext();
+
 export const AdminLogin = () => {
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
