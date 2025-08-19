@@ -16,6 +16,12 @@ export const AuthContext = React.createContext();
 
 export const AdminLogin = () => {
   const navigate = useNavigate();
+  const authContext = useContext(AuthContext);
+  
+  // Use auth context if available, otherwise fall back to direct implementation
+  const login = authContext?.login;
+  const register = authContext?.register;
+
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     username: '',
@@ -35,24 +41,48 @@ export const AdminLogin = () => {
 
     try {
       if (isLogin) {
-        const response = await axios.post(`${API}/auth/login`, {
-          username: formData.username,
-          password: formData.password
-        });
-        
-        const { access_token, user: userData } = response.data;
-        
-        localStorage.setItem('token', access_token);
-        localStorage.setItem('user', JSON.stringify(userData));
-        axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
-        
-        // Redirect to admin dashboard
-        navigate('/admin');
+        if (login) {
+          // Use AuthContext login if available
+          const result = await login(formData.username, formData.password);
+          if (result.success) {
+            navigate('/admin');
+          } else {
+            setError(result.error);
+          }
+        } else {
+          // Direct implementation as fallback
+          const response = await axios.post(`${API}/auth/login`, {
+            username: formData.username,
+            password: formData.password
+          });
+          
+          const { access_token, user: userData } = response.data;
+          
+          localStorage.setItem('token', access_token);
+          localStorage.setItem('user', JSON.stringify(userData));
+          axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+          
+          // Force a page reload to update the auth state in the main app
+          window.location.href = '/admin';
+        }
       } else {
-        await axios.post(`${API}/auth/register`, formData);
-        setSuccess('Registration successful! Please wait for admin approval.');
-        setIsLogin(true);
-        setFormData({ username: '', password: '', email: '', full_name: '' });
+        if (register) {
+          // Use AuthContext register if available
+          const result = await register(formData);
+          if (result.success) {
+            setSuccess('Registration successful! Please wait for admin approval.');
+            setIsLogin(true);
+            setFormData({ username: '', password: '', email: '', full_name: '' });
+          } else {
+            setError(result.error);
+          }
+        } else {
+          // Direct implementation as fallback
+          await axios.post(`${API}/auth/register`, formData);
+          setSuccess('Registration successful! Please wait for admin approval.');
+          setIsLogin(true);
+          setFormData({ username: '', password: '', email: '', full_name: '' });
+        }
       }
     } catch (error) {
       setError(error.response?.data?.detail || (isLogin ? 'Login failed' : 'Registration failed'));
