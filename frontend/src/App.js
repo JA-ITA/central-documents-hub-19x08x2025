@@ -663,25 +663,36 @@ const Dashboard = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   useEffect(() => {
-    fetchPolicies();
+    fetchDocuments();  // Updated function name
     fetchCategories();
     fetchPolicyTypes();
     if (user.role === 'admin') {
       fetchUsers();
+      fetchUserGroups();  // New function call
     }
-  }, [user, showHidden, showDeleted, showDeletedPolicyTypes]);
+  }, [user, showHidden, showDeleted, showDeletedPolicyTypes, showDeletedUserGroups]);
 
-  const fetchPolicies = async () => {
+  const fetchDocuments = async () => {  // Renamed from fetchPolicies
     try {
       const params = new URLSearchParams();
       if (user.role === 'admin') {
-        if (showHidden) params.append('include_hidden', 'true');
-        if (showDeleted) params.append('include_deleted', 'true');
+        if (showHidden) params.append('show_hidden', 'true');
+        if (showDeleted) params.append('show_deleted', 'true');
       }
-      const response = await axios.get(`${API}/policies?${params}`);
-      setPolicies(response.data);
+      const response = await axios.get(`${API}/documents?${params}`);  // Updated endpoint
+      setDocuments(response.data);  // Updated state setter
     } catch (error) {
-      console.error('Error fetching policies:', error);
+      console.error('Error fetching documents:', error);
+    }
+  };
+
+  const fetchUserGroups = async () => {  // New function
+    try {
+      const params = showDeletedUserGroups ? '?include_deleted=true' : '';
+      const response = await axios.get(`${API}/user-groups${params}`);
+      setUserGroups(response.data);
+    } catch (error) {
+      console.error('Error fetching user groups:', error);
     }
   };
 
