@@ -241,26 +241,29 @@ class AdminLoginTester:
             self.log_test("Test Policy Creation", False, "No categories or policy types available")
             return False
         
-        # Create a simple text file to upload as test document
-        test_content = """TEST POLICY DOCUMENT
-
-This is a test policy document created for API testing purposes.
-
-Policy Title: Test Policy for Download Testing
-Created: {datetime.now().isoformat()}
-Purpose: Verify PDF download functionality
-
-This document contains test content to verify that the policy management system
-can properly handle document uploads and downloads.
-
-END OF TEST DOCUMENT"""
-        
-        test_file_path = "/tmp/test_policy.txt"
+        # Create a simple PDF file to upload as test document
+        test_file_path = "/tmp/test_policy.pdf"
         try:
-            with open(test_file_path, 'w') as f:
-                f.write(test_content)
+            from reportlab.pdfgen import canvas
+            from reportlab.lib.pagesizes import letter
+            
+            c = canvas.Canvas(test_file_path, pagesize=letter)
+            c.drawString(100, 750, 'TEST POLICY DOCUMENT')
+            c.drawString(100, 720, 'This is a test policy document for API testing.')
+            c.drawString(100, 690, f'Created: {datetime.now().isoformat()}')
+            c.drawString(100, 660, 'Purpose: Verify PDF download functionality')
+            c.drawString(100, 630, 'Policy Management System Test')
+            c.save()
+        except ImportError:
+            # Fallback: copy existing PDF if reportlab not available
+            import shutil
+            if os.path.exists("/tmp/test_policy.pdf"):
+                pass  # File already exists
+            else:
+                self.log_test("Test Policy Creation", False, "Cannot create PDF file - reportlab not available and no existing PDF")
+                return False
         except Exception as e:
-            self.log_test("Test Policy Creation", False, f"Cannot create test file: {str(e)}")
+            self.log_test("Test Policy Creation", False, f"Cannot create test PDF: {str(e)}")
             return False
         
         # Prepare form data for policy creation
