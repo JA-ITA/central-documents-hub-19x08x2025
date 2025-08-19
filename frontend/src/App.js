@@ -1200,9 +1200,25 @@ const Dashboard = () => {
           </TabsContent>
 
           {user.role === 'admin' && (
+            <TabsContent value="user-groups">
+              <UserGroupManager 
+                userGroups={userGroups}
+                onUpdate={fetchUserGroups}
+                onCreate={createUserGroup}
+                onUpdateGroup={updateUserGroup}
+                onDelete={deleteUserGroup}
+                onRestore={restoreUserGroup}
+                showDeleted={showDeletedUserGroups}
+                onShowDeletedChange={setShowDeletedUserGroups}
+              />
+            </TabsContent>
+          )}
+
+          {user.role === 'admin' && (
             <TabsContent value="users">
               <UserManager 
-                users={users} 
+                users={users}
+                userGroups={userGroups}
                 onUpdate={fetchUsers}
                 showDeleted={showDeleted}
                 onShowDeletedChange={setShowDeleted}
@@ -1211,6 +1227,7 @@ const Dashboard = () => {
                 onDelete={handleDeleteUser}
                 onRestore={handleRestoreUser}
                 onChangeRole={handleChangeUserRole}
+                onAssignGroups={assignUserToGroups}
               />
             </TabsContent>
           )}
