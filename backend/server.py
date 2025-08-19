@@ -400,7 +400,7 @@ async def update_policy_type(type_id: str, update_data: PolicyTypeUpdate, curren
     return {"message": "Policy type updated successfully"}
 
 @api_router.delete("/policy-types/{type_id}")
-async def delete_policy_type(type_id: str, current_user: User = Depends(require_admin)):
+async def delete_policy_type(type_id: str, current_user: User = Depends(require_admin_or_manager)):
     result = await db.policy_types.update_one(
         {"id": type_id},
         {"$set": {"is_deleted": True, "is_active": False}}
