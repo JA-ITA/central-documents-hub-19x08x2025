@@ -710,7 +710,7 @@ async def toggle_policy_visibility(policy_id: str, is_visible: bool, current_use
     return {"message": f"Policy {'shown' if is_visible else 'hidden'} successfully"}
 
 @api_router.delete("/policies/{policy_id}")
-async def delete_policy(policy_id: str, current_user: User = Depends(require_admin)):
+async def delete_policy(policy_id: str, current_user: User = Depends(require_admin_or_manager)):
     result = await db.policies.update_one(
         {"id": policy_id},
         {"$set": {"status": "deleted", "modified_by": current_user.username, "modified_at": datetime.utcnow()}}
