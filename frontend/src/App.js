@@ -1447,6 +1447,227 @@ const PolicyTypeManager = ({ policyTypes, onUpdate, userRole, showDeleted, onSho
   );
 };
 
+// User Group Manager Component
+const UserGroupManager = ({ 
+  userGroups, 
+  onUpdate, 
+  onCreate, 
+  onUpdateGroup, 
+  onDelete, 
+  onRestore, 
+  showDeleted, 
+  onShowDeletedChange 
+}) => {
+  const [newGroup, setNewGroup] = useState({ name: '', code: '', description: '', department: '' });
+  const [editingGroup, setEditingGroup] = useState(null);
+  const [isAddingGroup, setIsAddingGroup] = useState(false);
+
+  const handleAddGroup = async (e) => {
+    e.preventDefault();
+    try {
+      await onCreate(newGroup);
+      setNewGroup({ name: '', code: '', description: '', department: '' });
+      setIsAddingGroup(false);
+    } catch (error) {
+      console.error('Error adding user group:', error);
+    }
+  };
+
+  const handleEditGroup = async (e) => {
+    e.preventDefault();
+    try {
+      await onUpdateGroup(editingGroup.id, editingGroup);
+      setEditingGroup(null);
+    } catch (error) {
+      console.error('Error updating user group:', error);
+    }
+  };
+
+  const filteredGroups = showDeleted 
+    ? userGroups 
+    : userGroups.filter(group => !group.is_deleted);
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>User Group Management</CardTitle>
+            <CardDescription>
+              Manage organizational user groups and departments
+            </CardDescription>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="show-deleted-groups"
+                checked={showDeleted}
+                onCheckedChange={onShowDeletedChange}
+              />
+              <Label htmlFor="show-deleted-groups" className="text-sm">
+                Show Deleted
+              </Label>
+            </div>
+            <Button onClick={() => setIsAddingGroup(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Group
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {(isAddingGroup || editingGroup) && (
+          <Card>
+            <CardHeader>
+              <CardTitle>{editingGroup ? 'Edit User Group' : 'Add New User Group'}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={editingGroup ? handleEditGroup : handleAddGroup} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="group-name">Group Name</Label>
+                    <Input
+                      id="group-name"
+                      placeholder="e.g., HR Department"
+                      value={editingGroup ? editingGroup.name : newGroup.name}
+                      onChange={(e) => editingGroup 
+                        ? setEditingGroup({ ...editingGroup, name: e.target.value })
+                        : setNewGroup({ ...newGroup, name: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="group-code">Group Code</Label>
+                    <Input
+                      id="group-code"
+                      placeholder="e.g., HR"
+                      value={editingGroup ? editingGroup.code : newGroup.code}
+                      onChange={(e) => editingGroup
+                        ? setEditingGroup({ ...editingGroup, code: e.target.value })
+                        : setNewGroup({ ...newGroup, code: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="group-department">Department</Label>
+                  <Input
+                    id="group-department"
+                    placeholder="e.g., Human Resources"
+                    value={editingGroup ? editingGroup.department || '' : newGroup.department}
+                    onChange={(e) => editingGroup
+                      ? setEditingGroup({ ...editingGroup, department: e.target.value })
+                      : setNewGroup({ ...newGroup, department: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="group-description">Description</Label>
+                  <Textarea
+                    id="group-description"
+                    placeholder="Describe the purpose of this user group..."
+                    value={editingGroup ? editingGroup.description : newGroup.description}
+                    onChange={(e) => editingGroup
+                      ? setEditingGroup({ ...editingGroup, description: e.target.value })
+                      : setNewGroup({ ...newGroup, description: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="flex space-x-2">
+                  <Button type="submit">
+                    {editingGroup ? 'Update Group' : 'Add Group'}
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => {
+                      setIsAddingGroup(false);
+                      setEditingGroup(null);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Group Name</TableHead>
+                <TableHead>Code</TableHead>
+                <TableHead>Department</TableHead>
+                <TableHead>Description</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredGroups.map(group => (
+                <TableRow key={group.id}>
+                  <TableCell className="font-medium">{group.name}</TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">{group.code}</Badge>
+                  </TableCell>
+                  <TableCell>{group.department || '-'}</TableCell>
+                  <TableCell className="max-w-xs truncate">
+                    {group.description || '-'}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-2">
+                      <Badge variant={group.is_active ? "default" : "secondary"}>
+                        {group.is_active ? "Active" : "Inactive"}
+                      </Badge>
+                      {group.is_deleted && (
+                        <Badge variant="destructive">Deleted</Badge>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-2">
+                      {!group.is_deleted ? (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setEditingGroup({ ...group })}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onDelete(group.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onRestore(group.id)}
+                        >
+                          <RefreshCw className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
 // Enhanced Policy Uploader Component
 const PolicyUploader = ({ categories, policyTypes, onUpload }) => {
   const [formData, setFormData] = useState({
