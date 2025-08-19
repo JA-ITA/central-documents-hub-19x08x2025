@@ -410,7 +410,7 @@ async def delete_policy_type(type_id: str, current_user: User = Depends(require_
     return {"message": "Policy type deleted successfully"}
 
 @api_router.patch("/policy-types/{type_id}/restore")
-async def restore_policy_type(type_id: str, current_user: User = Depends(require_admin)):
+async def restore_policy_type(type_id: str, current_user: User = Depends(require_admin_or_manager)):
     result = await db.policy_types.update_one(
         {"id": type_id},
         {"$set": {"is_deleted": False, "is_active": True}}
