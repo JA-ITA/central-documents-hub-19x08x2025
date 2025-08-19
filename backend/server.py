@@ -801,7 +801,7 @@ async def download_policy(policy_id: str, current_user: User = Depends(get_curre
         raise HTTPException(status_code=404, detail="Policy not found")
     
     # Check if user can download this policy
-    if current_user.role != UserRole.ADMIN:
+    if current_user.role not in [UserRole.ADMIN, UserRole.POLICY_MANAGER]:
         if policy["status"] == "deleted" or not policy.get("is_visible_to_users", True):
             raise HTTPException(status_code=404, detail="Policy not found")
     
