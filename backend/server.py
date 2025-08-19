@@ -1401,6 +1401,75 @@ async def update_user_groups(user_id: str, group_ids: List[str], current_user: U
         raise HTTPException(status_code=404, detail="User not found")
     return {"message": "User groups updated successfully"}
 
+# Public Document API (No Authentication Required)
+@api_router.get("/public/documents")
+async def get_public_documents(
+    search: str = "",
+    category_id: str = "",
+    document_type: DocumentType = None,
+    status: PolicyStatus = None
+):
+    query = {
+        "status": {"$in": ["active", "archived"]},
+        "is_visible_to_users": True
+    }
+    
+    if search:
+        query["$or"] = [
+            {"title": {"$regex": search, "$options": "i"}},
+            {"description": {"$regex": search, "$options": "i"}},
+            {"tags": {"$regex": search, "$options": "i"}}
+        ]
+    
+    if category_id:
+        query["category_id"] = category_id
+    
+    if document_type:
+        query["document_type"] = document_type
+    
+    if status:
+        query["status"] = status
+    
+    documents = []
+    async for doc in db.documents.find(query):
+        doc.pop('_id', None)
+        documents.append(Document(**doc))
+    
+    return documents
+
+@api_router.get("/public/documents/{document_id}")
+async def get_public_document(document_id: str):
+    document = await db.documents.find_one({
+        "id": document_id,
+        "status": {"$in": ["active", "archived"]},
+        "is_visible_to_users": True
+    })
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    document.pop('_id', None)
+    return Document(**document)
+
+@api_router.get("/public/documents/{document_id}/download")
+async def download_public_document(document_id: str):
+    document = await db.documents.find_one({
+        "id": document_id,
+        "status": {"$in": ["active", "archived"]},
+        "is_visible_to_users": True
+    })
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    file_path = ROOT_DIR / document["file_url"].lstrip('/')
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    return FileResponse(
+        path=file_path,
+        filename=document["file_name"],
+        media_type='application/octet-stream'
+    )
+
 # Include the router
 app.include_router(api_router)
 
