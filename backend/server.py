@@ -700,7 +700,7 @@ async def update_policy(policy_id: str, update_data: PolicyUpdate, current_user:
     return {"message": "Policy updated successfully"}
 
 @api_router.patch("/policies/{policy_id}/visibility")
-async def toggle_policy_visibility(policy_id: str, is_visible: bool, current_user: User = Depends(require_admin)):
+async def toggle_policy_visibility(policy_id: str, is_visible: bool, current_user: User = Depends(require_admin_or_manager)):
     result = await db.policies.update_one(
         {"id": policy_id},
         {"$set": {"is_visible_to_users": is_visible, "modified_by": current_user.username, "modified_at": datetime.utcnow()}}
