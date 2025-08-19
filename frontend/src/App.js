@@ -1180,7 +1180,7 @@ const Dashboard = () => {
       {editingPolicy && (
         <DocumentEditDialog
           policy={editingPolicy}
-          onUpdate={fetchPolicies}
+          onUpdate={fetchDocuments}
           isOpen={isEditDialogOpen}
           onOpenChange={setIsEditDialogOpen}
         />
