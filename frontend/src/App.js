@@ -775,7 +775,7 @@ const Dashboard = () => {
   const restorePolicy = async (policyId) => {
     try {
       await axios.patch(`${API}/policies/${policyId}/restore`);
-      fetchPolicies();
+      fetchDocuments();
     } catch (error) {
       console.error('Error restoring policy:', error);
     }
