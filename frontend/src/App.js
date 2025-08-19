@@ -752,10 +752,12 @@ const Dashboard = () => {
   // Policy management functions
   const togglePolicyVisibility = async (policyId, isVisible) => {
     try {
-      await axios.patch(`${API}/policies/${policyId}/visibility?is_visible=${!isVisible}`);
-      fetchPolicies();
+      await axios.patch(`${API}/documents/${policyId}/visibility`, {
+        is_visible_to_users: !isVisible
+      });
+      fetchDocuments();  // Updated function call
     } catch (error) {
-      console.error('Error toggling policy visibility:', error);
+      console.error('Error toggling document visibility:', error);
     }
   };
 
