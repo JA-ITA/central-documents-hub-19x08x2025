@@ -18,7 +18,7 @@ from datetime import datetime
 class AdminLoginTester:
     def __init__(self):
         # Use the backend URL from frontend/.env
-        self.base_url = "https://repo-navigator-11.preview.emergentagent.com"
+        self.base_url = "https://fileaccess-portal-2.preview.emergentagent.com"
         self.api_url = f"{self.base_url}/api"
         self.token = None
         self.admin_user = None

@@ -7,7 +7,7 @@ import tempfile
 import os
 
 class DocumentEditingTester:
-    def __init__(self, base_url="https://repo-navigator-11.preview.emergentagent.com"):
+    def __init__(self, base_url="https://fileaccess-portal-2.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.admin_token = None
