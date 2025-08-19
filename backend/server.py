@@ -460,7 +460,7 @@ async def update_category(category_id: str, update_data: CategoryUpdate, current
     return {"message": "Category updated successfully"}
 
 @api_router.delete("/categories/{category_id}")
-async def delete_category(category_id: str, current_user: User = Depends(require_admin)):
+async def delete_category(category_id: str, current_user: User = Depends(require_admin_or_manager)):
     result = await db.categories.update_one(
         {"id": category_id},
         {"$set": {"is_deleted": True, "is_active": False}}
