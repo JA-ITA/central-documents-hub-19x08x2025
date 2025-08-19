@@ -986,6 +986,421 @@ async def update_user_role(user_id: str, role: UserRole, current_user: User = De
         raise HTTPException(status_code=404, detail="User not found")
     return {"message": "User role updated successfully"}
 
+# User Group Routes
+@api_router.post("/user-groups", response_model=UserGroup)
+async def create_user_group(group_data: UserGroupCreate, current_user: User = Depends(require_admin)):
+    # Check if code already exists
+    existing_group = await db.user_groups.find_one({"code": group_data.code.upper(), "is_deleted": False})
+    if existing_group:
+        raise HTTPException(status_code=400, detail="User group code already exists")
+    
+    user_group = UserGroup(
+        name=group_data.name,
+        code=group_data.code.upper(),
+        description=group_data.description or "",
+        department=group_data.department
+    )
+    
+    await db.user_groups.insert_one(user_group.dict())
+    return user_group
+
+@api_router.get("/user-groups")
+async def get_user_groups(include_deleted: bool = False, current_user: User = Depends(require_admin)):
+    query = {}
+    if not include_deleted:
+        query["is_deleted"] = False
+    
+    groups = []
+    async for group in db.user_groups.find(query):
+        group.pop('_id', None)
+        groups.append(UserGroup(**group))
+    
+    return groups
+
+@api_router.get("/user-groups/{group_id}", response_model=UserGroup)
+async def get_user_group(group_id: str, current_user: User = Depends(require_admin)):
+    group = await db.user_groups.find_one({"id": group_id, "is_deleted": False})
+    if not group:
+        raise HTTPException(status_code=404, detail="User group not found")
+    
+    group.pop('_id', None)
+    return UserGroup(**group)
+
+@api_router.put("/user-groups/{group_id}", response_model=UserGroup)
+async def update_user_group(group_id: str, group_data: UserGroupUpdate, current_user: User = Depends(require_admin)):
+    update_data = {}
+    if group_data.name is not None:
+        update_data["name"] = group_data.name
+    if group_data.code is not None:
+        # Check if new code already exists (excluding current group)
+        existing_group = await db.user_groups.find_one({
+            "code": group_data.code.upper(), 
+            "is_deleted": False,
+            "id": {"$ne": group_id}
+        })
+        if existing_group:
+            raise HTTPException(status_code=400, detail="User group code already exists")
+        update_data["code"] = group_data.code.upper()
+    if group_data.description is not None:
+        update_data["description"] = group_data.description
+    if group_data.department is not None:
+        update_data["department"] = group_data.department
+    if group_data.is_active is not None:
+        update_data["is_active"] = group_data.is_active
+    if group_data.is_deleted is not None:
+        update_data["is_deleted"] = group_data.is_deleted
+    
+    if update_data:
+        result = await db.user_groups.update_one({"id": group_id}, {"$set": update_data})
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="User group not found")
+    
+    # Return updated group
+    updated_group = await db.user_groups.find_one({"id": group_id})
+    if not updated_group:
+        raise HTTPException(status_code=404, detail="User group not found")
+    
+    updated_group.pop('_id', None)
+    return UserGroup(**updated_group)
+
+@api_router.delete("/user-groups/{group_id}")
+async def delete_user_group(group_id: str, current_user: User = Depends(require_admin)):
+    result = await db.user_groups.update_one(
+        {"id": group_id},
+        {"$set": {"is_deleted": True, "is_active": False}}
+    )
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="User group not found")
+    return {"message": "User group deleted successfully"}
+
+@api_router.patch("/user-groups/{group_id}/restore")
+async def restore_user_group(group_id: str, current_user: User = Depends(require_admin)):
+    result = await db.user_groups.update_one(
+        {"id": group_id},
+        {"$set": {"is_deleted": False, "is_active": True}}
+    )
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="User group not found")
+    return {"message": "User group restored successfully"}
+
+# Document Routes (Enhanced version of policies)
+@api_router.post("/documents")
+async def upload_document(
+    title: str = Form(...),
+    document_type: DocumentType = Form(DocumentType.DOCUMENT),
+    category_id: str = Form(...),
+    policy_type_id: str = Form(None),
+    date_issued: str = Form(...),
+    owner_department: str = Form(...),
+    description: str = Form(""),
+    tags: str = Form(""),  # Comma-separated tags
+    file: UploadFile = File(...),
+    current_user: User = Depends(require_admin_or_manager)
+):
+    # Validate file type
+    allowed_extensions = ['.pdf', '.docx', '.doc', '.txt']
+    file_extension = Path(file.filename).suffix.lower()
+    if file_extension not in allowed_extensions:
+        raise HTTPException(
+            status_code=400, 
+            detail="Invalid file type. Only PDF, DOCX, DOC, and TXT files are allowed."
+        )
+    
+    # Parse date
+    try:
+        issued_date = datetime.fromisoformat(date_issued.replace('Z', '+00:00'))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format")
+    
+    # Parse tags
+    tag_list = [tag.strip() for tag in tags.split(',') if tag.strip()] if tags else []
+    
+    # Verify category exists
+    category = await db.categories.find_one({"id": category_id, "is_deleted": False})
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found")
+    
+    # Verify policy type if provided
+    if policy_type_id:
+        policy_type = await db.policy_types.find_one({"id": policy_type_id, "is_active": True, "is_deleted": False})
+        if not policy_type:
+            raise HTTPException(status_code=404, detail="Policy type not found")
+    
+    # Generate document number
+    year = issued_date.year
+    doc_number = await generate_document_number(category_id, policy_type_id, document_type, year)
+    
+    # Save file
+    file_path = UPLOAD_DIR / file.filename
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    
+    # Create document
+    document = Document(
+        title=title,
+        document_type=document_type,
+        category_id=category_id,
+        policy_type_id=policy_type_id,
+        date_issued=issued_date,
+        owner_department=owner_department,
+        document_number=doc_number,
+        description=description,
+        tags=tag_list,
+        file_url=f"/uploads/{file.filename}",
+        file_name=file.filename,
+        created_by=current_user.id,
+        version_history=[
+            DocumentVersion(
+                version_number=1,
+                upload_date=datetime.utcnow(),
+                uploaded_by=current_user.id,
+                change_summary="Initial version",
+                file_url=f"/uploads/{file.filename}",
+                file_name=file.filename
+            )
+        ]
+    )
+    
+    await db.documents.insert_one(document.dict())
+    return {"message": "Document uploaded successfully", "document": document}
+
+async def generate_document_number(category_id: str, policy_type_id: str, document_type: DocumentType, year: int) -> str:
+    # Get category
+    category = await db.categories.find_one({"id": category_id, "is_deleted": False})
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found")
+    
+    category_code = category["code"]
+    
+    # Get type code
+    if policy_type_id:
+        policy_type = await db.policy_types.find_one({"id": policy_type_id, "is_active": True, "is_deleted": False})
+        type_code = policy_type["code"] if policy_type else document_type.value.upper()[:2]
+    else:
+        type_code = document_type.value.upper()[:2]
+    
+    # Get next sequential number for this category and year
+    existing_docs = await db.documents.find({
+        "category_id": category_id,
+        "document_type": document_type,
+        "date_issued": {
+            "$gte": datetime(year, 1, 1),
+            "$lt": datetime(year + 1, 1, 1)
+        },
+        "status": {"$ne": "deleted"}
+    }).to_list(None)
+    
+    next_seq = len(existing_docs) + 1
+    
+    return f"{category_code}-{type_code}-{next_seq:03d}-{year}-v1"
+
+@api_router.get("/documents")
+async def get_documents(
+    search: str = "",
+    category_id: str = "",
+    document_type: DocumentType = None,
+    status: PolicyStatus = None,
+    show_hidden: bool = False,
+    show_deleted: bool = False,
+    current_user: User = Depends(get_current_user)
+):
+    query = {}
+    
+    # Admin and policy managers can see all documents
+    if current_user.role in [UserRole.ADMIN, UserRole.POLICY_MANAGER]:
+        if not show_deleted:
+            query["status"] = {"$ne": "deleted"}
+        if not show_hidden and current_user.role != UserRole.ADMIN:
+            query["$or"] = [
+                {"is_visible_to_users": True},
+                {"visible_to_groups": {"$in": current_user.user_group_ids}}
+            ]
+    else:
+        # Regular users can only see documents visible to them
+        query["status"] = {"$in": ["active", "archived"]}
+        query["$or"] = [
+            {"is_visible_to_users": True},
+            {"visible_to_groups": {"$in": current_user.user_group_ids}}
+        ]
+    
+    if search:
+        query["$or"] = [
+            {"title": {"$regex": search, "$options": "i"}},
+            {"description": {"$regex": search, "$options": "i"}},
+            {"tags": {"$regex": search, "$options": "i"}}
+        ]
+    
+    if category_id:
+        query["category_id"] = category_id
+    
+    if document_type:
+        query["document_type"] = document_type
+    
+    if status:
+        query["status"] = status
+    
+    documents = []
+    async for doc in db.documents.find(query):
+        doc.pop('_id', None)
+        documents.append(Document(**doc))
+    
+    return documents
+
+@api_router.get("/documents/{document_id}", response_model=Document)
+async def get_document(document_id: str, current_user: User = Depends(get_current_user)):
+    document = await db.documents.find_one({"id": document_id})
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    # Check access permissions
+    if current_user.role not in [UserRole.ADMIN, UserRole.POLICY_MANAGER]:
+        if (document.get("status") not in ["active", "archived"] or
+            (not document.get("is_visible_to_users", False) and 
+             not any(group in current_user.user_group_ids for group in document.get("visible_to_groups", [])))):
+            raise HTTPException(status_code=404, detail="Document not found")
+    
+    document.pop('_id', None)
+    return Document(**document)
+
+@api_router.put("/documents/{document_id}", response_model=Document)
+async def update_document(
+    document_id: str, 
+    document_data: DocumentUpdate, 
+    current_user: User = Depends(require_admin_or_manager)
+):
+    # Find existing document
+    existing_doc = await db.documents.find_one({"id": document_id})
+    if not existing_doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    # Build update data
+    update_data = {"modified_by": current_user.id, "modified_at": datetime.utcnow()}
+    
+    if document_data.title is not None:
+        update_data["title"] = document_data.title
+    if document_data.document_type is not None:
+        update_data["document_type"] = document_data.document_type
+    if document_data.category_id is not None:
+        # Verify category exists
+        category = await db.categories.find_one({"id": document_data.category_id, "is_deleted": False})
+        if not category:
+            raise HTTPException(status_code=404, detail="Category not found")
+        update_data["category_id"] = document_data.category_id
+    if document_data.policy_type_id is not None:
+        if document_data.policy_type_id:
+            policy_type = await db.policy_types.find_one({"id": document_data.policy_type_id, "is_active": True, "is_deleted": False})
+            if not policy_type:
+                raise HTTPException(status_code=404, detail="Policy type not found")
+        update_data["policy_type_id"] = document_data.policy_type_id
+    if document_data.date_issued is not None:
+        update_data["date_issued"] = document_data.date_issued
+    if document_data.owner_department is not None:
+        update_data["owner_department"] = document_data.owner_department
+    if document_data.status is not None:
+        update_data["status"] = document_data.status
+    if document_data.is_visible_to_users is not None:
+        update_data["is_visible_to_users"] = document_data.is_visible_to_users
+    if document_data.visible_to_groups is not None:
+        update_data["visible_to_groups"] = document_data.visible_to_groups
+    if document_data.description is not None:
+        update_data["description"] = document_data.description
+    if document_data.tags is not None:
+        update_data["tags"] = document_data.tags
+    
+    # Update document
+    result = await db.documents.update_one({"id": document_id}, {"$set": update_data})
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    # Return updated document
+    updated_doc = await db.documents.find_one({"id": document_id})
+    updated_doc.pop('_id', None)
+    return Document(**updated_doc)
+
+@api_router.patch("/documents/{document_id}/visibility")
+async def toggle_document_visibility(
+    document_id: str, 
+    visibility_data: dict,
+    current_user: User = Depends(require_admin_or_manager)
+):
+    update_data = {}
+    if "is_visible_to_users" in visibility_data:
+        update_data["is_visible_to_users"] = visibility_data["is_visible_to_users"]
+    if "visible_to_groups" in visibility_data:
+        update_data["visible_to_groups"] = visibility_data["visible_to_groups"]
+    
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No visibility data provided")
+    
+    result = await db.documents.update_one(
+        {"id": document_id}, 
+        {"$set": update_data}
+    )
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    return {"message": "Document visibility updated successfully"}
+
+@api_router.delete("/documents/{document_id}")
+async def delete_document(document_id: str, current_user: User = Depends(require_admin_or_manager)):
+    result = await db.documents.update_one(
+        {"id": document_id},
+        {"$set": {"status": "deleted"}}
+    )
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return {"message": "Document deleted successfully"}
+
+@api_router.patch("/documents/{document_id}/restore")
+async def restore_document(document_id: str, current_user: User = Depends(require_admin_or_manager)):
+    result = await db.documents.update_one(
+        {"id": document_id},
+        {"$set": {"status": "active"}}
+    )
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return {"message": "Document restored successfully"}
+
+@api_router.get("/documents/{document_id}/download")
+async def download_document(document_id: str, current_user: User = Depends(get_current_user)):
+    document = await db.documents.find_one({"id": document_id})
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    # Check access permissions
+    if current_user.role not in [UserRole.ADMIN, UserRole.POLICY_MANAGER]:
+        if (document.get("status") not in ["active", "archived"] or
+            (not document.get("is_visible_to_users", False) and 
+             not any(group in current_user.user_group_ids for group in document.get("visible_to_groups", [])))):
+            raise HTTPException(status_code=404, detail="Document not found")
+    
+    file_path = ROOT_DIR / document["file_url"].lstrip('/')
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    return FileResponse(
+        path=file_path,
+        filename=document["file_name"],
+        media_type='application/octet-stream'
+    )
+
+# Update user group assignment
+@api_router.patch("/users/{user_id}/groups")
+async def update_user_groups(user_id: str, group_ids: List[str], current_user: User = Depends(require_admin)):
+    # Verify all group IDs exist
+    for group_id in group_ids:
+        group = await db.user_groups.find_one({"id": group_id, "is_deleted": False, "is_active": True})
+        if not group:
+            raise HTTPException(status_code=404, detail=f"User group {group_id} not found")
+    
+    result = await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"user_group_ids": group_ids}}
+    )
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"message": "User groups updated successfully"}
+
 # Include the router
 app.include_router(api_router)
 
