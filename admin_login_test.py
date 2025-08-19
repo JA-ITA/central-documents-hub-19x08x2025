@@ -276,10 +276,10 @@ class AdminLoginTester:
             'change_summary': 'Initial test policy creation'
         }
         
-        # Upload policy with file
+        # Upload policy with PDF file
         try:
             with open(test_file_path, 'rb') as f:
-                files = {'file': ('test_policy.txt', f, 'text/plain')}
+                files = {'file': ('test_policy.pdf', f, 'application/pdf')}
                 headers = {'Authorization': f'Bearer {self.token}'}
                 
                 response = requests.post(
