@@ -1067,7 +1067,7 @@ const Dashboard = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredPolicies.map(policy => (
+                      {filteredDocuments.map(policy => (  {/* Updated variable name */}
                         <TableRow key={policy.id}>
                           <TableCell className="font-mono text-sm">
                             {policy.policy_number}
