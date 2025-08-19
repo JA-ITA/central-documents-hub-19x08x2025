@@ -720,7 +720,7 @@ async def delete_policy(policy_id: str, current_user: User = Depends(require_adm
     return {"message": "Policy deleted successfully"}
 
 @api_router.patch("/policies/{policy_id}/restore")
-async def restore_policy(policy_id: str, current_user: User = Depends(require_admin)):
+async def restore_policy(policy_id: str, current_user: User = Depends(require_admin_or_manager)):
     result = await db.policies.update_one(
         {"id": policy_id},
         {"$set": {"status": "active", "modified_by": current_user.username, "modified_at": datetime.utcnow()}}
