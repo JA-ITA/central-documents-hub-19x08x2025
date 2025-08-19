@@ -762,22 +762,22 @@ const Dashboard = () => {
   };
 
   const deletePolicy = async (policyId) => {
-    if (window.confirm('Are you sure you want to delete this policy?')) {
+    if (window.confirm('Are you sure you want to delete this document?')) {
       try {
-        await axios.delete(`${API}/policies/${policyId}`);
-        fetchDocuments();
+        await axios.delete(`${API}/documents/${policyId}`);  // Updated endpoint
+        fetchDocuments();  // Updated function call
       } catch (error) {
-        console.error('Error deleting policy:', error);
+        console.error('Error deleting document:', error);
       }
     }
   };
 
   const restorePolicy = async (policyId) => {
     try {
-      await axios.patch(`${API}/policies/${policyId}/restore`);
-      fetchDocuments();
+      await axios.patch(`${API}/documents/${policyId}/restore`);  // Updated endpoint
+      fetchDocuments();  // Updated function call
     } catch (error) {
-      console.error('Error restoring policy:', error);
+      console.error('Error restoring document:', error);
     }
   };
 
