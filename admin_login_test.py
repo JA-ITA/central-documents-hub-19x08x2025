@@ -18,7 +18,7 @@ from datetime import datetime
 class AdminLoginTester:
     def __init__(self):
         # Use the backend URL from frontend/.env
-        self.base_url = "https://codebase-check-12.preview.emergentagent.com"
+        self.base_url = "https://secure-doc-share.preview.emergentagent.com"
         self.api_url = f"{self.base_url}/api"
         self.token = None
         self.admin_user = None

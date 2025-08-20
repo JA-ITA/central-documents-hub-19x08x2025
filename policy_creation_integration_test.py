@@ -5,7 +5,7 @@ import time
 
 def test_policy_creation_with_deleted_policy_type():
     """Test that policy creation properly rejects deleted policy types"""
-    base_url = "https://codebase-check-12.preview.emergentagent.com"
+    base_url = "https://secure-doc-share.preview.emergentagent.com"
     api_url = f"{base_url}/api"
     
     # Login as admin
