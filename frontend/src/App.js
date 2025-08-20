@@ -47,7 +47,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Building2,
-  Tag
+  Tag,
+  Globe,
+  Lock
 } from 'lucide-react';
 import './App.css';
 
